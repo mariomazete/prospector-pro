@@ -7,10 +7,11 @@ import { QuickFilters, type QuickFilterState } from "@/components/prospector/Qui
 import { ResultsTable } from "@/components/prospector/ResultsTable";
 import { BusinessModal } from "@/components/prospector/BusinessModal";
 import {
-  generateMockBusinesses,
   calcOpportunityScore,
   type Business,
 } from "@/lib/mock-businesses";
+import { searchBusinesses } from "@/lib/prospector.functions";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -36,13 +37,24 @@ function Index() {
     highOpportunity: false,
   });
 
-  const handleSearch = (v: SearchValues) => {
+  const handleSearch = async (v: SearchValues) => {
     setLoading(true);
     setSearched(true);
-    setTimeout(() => {
-      setResults(generateMockBusinesses(v.country, v.city, v.niche));
+    try {
+      const res = await searchBusinesses({ data: v });
+      if (res.error) toast.error(res.error);
+      const sorted = [...res.businesses].sort(
+        (a, b) => calcOpportunityScore(b) - calcOpportunityScore(a),
+      );
+      setResults(sorted);
+      if (!res.error && sorted.length === 0) toast("No results found for this query.");
+    } catch (err) {
+      console.error(err);
+      toast.error("Search failed. Please try again.");
+      setResults([]);
+    } finally {
       setLoading(false);
-    }, 700);
+    }
   };
 
   const filtered = useMemo(() => {
