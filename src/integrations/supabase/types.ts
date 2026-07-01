@@ -14,7 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      prospector_cache: {
+        Row: {
+          cache_key: string
+          city: string
+          country: string
+          created_at: string
+          expires_at: string
+          id: string
+          niche: string
+          payload: Json
+        }
+        Insert: {
+          cache_key: string
+          city: string
+          country: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          niche: string
+          payload: Json
+        }
+        Update: {
+          cache_key?: string
+          city?: string
+          country?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          niche?: string
+          payload?: Json
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
