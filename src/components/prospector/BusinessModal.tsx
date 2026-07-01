@@ -317,6 +317,65 @@ export function BusinessModal({ business, onClose }: Props) {
             <InfoRow icon={<Star className="h-3.5 w-3.5" />} label="Rating" value={`${business.rating.toFixed(1)} (${business.reviewsCount} reviews)`} />
           </div>
 
+          {user && companyId && (
+            <section className="rounded-xl border border-border bg-background/40 p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <h4 className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  <Bookmark className="h-3.5 w-3.5 text-primary" /> CRM
+                </h4>
+                <div className="w-56">
+                  <Select value={status} onValueChange={(v) => handleStatusChange(v as CompanyStatus)}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {(Object.keys(STATUS_LABELS) as CompanyStatus[]).map((s) => (
+                        <SelectItem key={s} value={s}>{STATUS_LABELS[s]}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                    <Tag className="h-3 w-3" /> Tags (comma-separated)
+                  </label>
+                  <input
+                    value={tagsInput}
+                    onChange={(e) => setTagsInput(e.target.value)}
+                    placeholder="hot lead, needs-website, follow-up"
+                    className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                    <Calendar className="h-3 w-3" /> Next follow-up
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={followup}
+                    onChange={(e) => setFollowup(e.target.value)}
+                    className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="mb-1 block text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Notes</label>
+                  <Textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Add notes about this lead…"
+                    rows={3}
+                    className="text-sm"
+                  />
+                </div>
+              </div>
+              <div className="mt-3 flex justify-end">
+                <Button size="sm" onClick={handleSaveMeta} disabled={savingMeta} className="h-8 rounded-lg text-xs">
+                  {savingMeta ? "Saving…" : "Save"}
+                </Button>
+              </div>
+            </section>
+          )}
+
           {!analysis ? (
             <section className="rounded-xl border border-primary/30 bg-gradient-to-br from-primary/10 to-primary/5 p-5 text-center">
               <div className="mb-2 flex items-center justify-center gap-2 text-sm font-semibold">
