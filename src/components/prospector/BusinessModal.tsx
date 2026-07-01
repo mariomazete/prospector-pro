@@ -16,10 +16,10 @@ import type { Business } from "@/lib/mock-businesses";
 import { calcOpportunityScore } from "@/lib/mock-businesses";
 import { OpportunityBadge } from "./OpportunityBadge";
 import { generatePitch, analyzeBusiness, type DeepAnalysis, type PitchSet } from "@/lib/prospector.functions";
-import { saveBusinessAsLead } from "@/lib/leads-client";
+import { addToPipeline, findCompanyByPlaceId, toggleFavorite } from "@/lib/companies-client";
 import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "@tanstack/react-router";
-import { Bookmark } from "lucide-react";
+import { Bookmark, Heart } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
@@ -30,7 +30,10 @@ interface Props {
 export function BusinessModal({ business, onClose }: Props) {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [saving, setSaving] = useState(false);
+  const [addingPipeline, setAddingPipeline] = useState(false);
+  const [favorite, setFavorite] = useState(false);
+  const [companyId, setCompanyId] = useState<string | null>(null);
+  const [inPipeline, setInPipeline] = useState(false);
   const [pitches, setPitches] = useState<PitchSet | null>(null);
   const [generating, setGenerating] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
@@ -47,7 +50,18 @@ export function BusinessModal({ business, onClose }: Props) {
   useEffect(() => {
     setPitches(null);
     setAnalysis(null);
-  }, [business?.id]);
+    setFavorite(false);
+    setCompanyId(null);
+    setInPipeline(false);
+    if (business && user) {
+      findCompanyByPlaceId(business.id).then((c) => {
+        if (!c) return;
+        setCompanyId(c.id);
+        setFavorite(!!c.user_state?.favorite);
+        setInPipeline(!!c.user_state?.in_pipeline);
+      }).catch(() => {});
+    }
+  }, [business, user]);
 
   if (!business) return null;
   const score = calcOpportunityScore(business);
@@ -103,20 +117,38 @@ export function BusinessModal({ business, onClose }: Props) {
     setTimeout(() => setCopiedKey(null), 1500);
   };
 
-  const handleSaveLead = async () => {
+  const handleAddToPipeline = async () => {
     if (!user) {
-      toast("Sign in to save leads");
+      toast("Sign in to add to pipeline");
       navigate({ to: "/auth" });
       return;
     }
-    setSaving(true);
+    if (!companyId) {
+      toast.error("Company not yet saved. Try again in a moment.");
+      return;
+    }
+    setAddingPipeline(true);
     try {
-      await saveBusinessAsLead(business);
-      toast.success("Saved to CRM");
+      await addToPipeline(companyId);
+      setInPipeline(true);
+      toast.success("Added to Pipeline");
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
-      setSaving(false);
+      setAddingPipeline(false);
+    }
+  };
+
+  const handleToggleFavorite = async () => {
+    if (!user) { navigate({ to: "/auth" }); return; }
+    if (!companyId) return;
+    const next = !favorite;
+    setFavorite(next);
+    try {
+      await toggleFavorite(companyId, next);
+    } catch (e) {
+      setFavorite(!next);
+      toast.error((e as Error).message);
     }
   };
 
@@ -151,10 +183,27 @@ export function BusinessModal({ business, onClose }: Props) {
                     <span className="text-[10px] font-normal text-primary/70">local</span>
                   </div>
                 )}
-                <Button size="sm" onClick={handleSaveLead} disabled={saving} className="h-8 rounded-lg bg-primary text-xs hover:bg-primary/90">
-                  <Bookmark className="mr-1 h-3.5 w-3.5" />
-                  {saving ? "Saving…" : "Save to CRM"}
-                </Button>
+                <div className="flex gap-1.5">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleToggleFavorite}
+                    disabled={!companyId}
+                    className="h-8 w-8 rounded-lg p-0"
+                    aria-label="Toggle favorite"
+                  >
+                    <Heart className={`h-4 w-4 ${favorite ? "fill-red-500 text-red-500" : ""}`} />
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleAddToPipeline}
+                    disabled={addingPipeline || inPipeline}
+                    className="h-8 rounded-lg bg-primary text-xs hover:bg-primary/90"
+                  >
+                    <Bookmark className="mr-1 h-3.5 w-3.5" />
+                    {inPipeline ? "In Pipeline" : addingPipeline ? "Adding…" : "Add to Pipeline"}
+                  </Button>
+                </div>
               </div>
             </div>
           </DialogHeader>

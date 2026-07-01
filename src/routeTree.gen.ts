@@ -13,6 +13,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedCrmRouteImport } from './routes/_authenticated/crm'
+import { Route as AuthenticatedBaseRouteImport } from './routes/_authenticated/base'
 import { Route as ApiPublicProspectorStreamRouteImport } from './routes/api/public/prospector-stream'
 
 const AuthRoute = AuthRouteImport.update({
@@ -34,6 +35,11 @@ const AuthenticatedCrmRoute = AuthenticatedCrmRouteImport.update({
   path: '/crm',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedBaseRoute = AuthenticatedBaseRouteImport.update({
+  id: '/base',
+  path: '/base',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const ApiPublicProspectorStreamRoute =
   ApiPublicProspectorStreamRouteImport.update({
     id: '/api/public/prospector-stream',
@@ -44,12 +50,14 @@ const ApiPublicProspectorStreamRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/base': typeof AuthenticatedBaseRoute
   '/crm': typeof AuthenticatedCrmRoute
   '/api/public/prospector-stream': typeof ApiPublicProspectorStreamRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/base': typeof AuthenticatedBaseRoute
   '/crm': typeof AuthenticatedCrmRoute
   '/api/public/prospector-stream': typeof ApiPublicProspectorStreamRoute
 }
@@ -58,19 +66,21 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/base': typeof AuthenticatedBaseRoute
   '/_authenticated/crm': typeof AuthenticatedCrmRoute
   '/api/public/prospector-stream': typeof ApiPublicProspectorStreamRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/crm' | '/api/public/prospector-stream'
+  fullPaths: '/' | '/auth' | '/base' | '/crm' | '/api/public/prospector-stream'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/crm' | '/api/public/prospector-stream'
+  to: '/' | '/auth' | '/base' | '/crm' | '/api/public/prospector-stream'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/base'
     | '/_authenticated/crm'
     | '/api/public/prospector-stream'
   fileRoutesById: FileRoutesById
@@ -112,6 +122,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCrmRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/base': {
+      id: '/_authenticated/base'
+      path: '/base'
+      fullPath: '/base'
+      preLoaderRoute: typeof AuthenticatedBaseRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/public/prospector-stream': {
       id: '/api/public/prospector-stream'
       path: '/api/public/prospector-stream'
@@ -123,10 +140,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedBaseRoute: typeof AuthenticatedBaseRoute
   AuthenticatedCrmRoute: typeof AuthenticatedCrmRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedBaseRoute: AuthenticatedBaseRoute,
   AuthenticatedCrmRoute: AuthenticatedCrmRoute,
 }
 
@@ -142,13 +161,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
