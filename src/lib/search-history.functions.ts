@@ -2,6 +2,9 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Business } from "@/lib/mock-businesses";
+import type { Database } from "@/integrations/supabase/types";
+
+type Json = Database["public"]["Tables"]["search_history"]["Row"]["filters"];
 
 export interface SearchHistoryRow {
   id: string;
@@ -10,7 +13,7 @@ export interface SearchHistoryRow {
   city: string | null;
   place_ids: string[];
   result_count: number;
-  filters: Record<string, unknown>;
+  filters: Json;
   created_at: string;
   updated_at: string;
 }
@@ -20,7 +23,7 @@ const SaveInput = z.object({
   country: z.string().min(1),
   city: z.string().nullable().optional(),
   placeIds: z.array(z.string()),
-  filters: z.record(z.string(), z.unknown()).optional().default({}),
+  filters: z.any().optional().default({}),
 });
 
 export const saveSearchHistory = createServerFn({ method: "POST" })
@@ -55,7 +58,7 @@ export const saveSearchHistory = createServerFn({ method: "POST" })
         .update({
           place_ids: data.placeIds,
           result_count: data.placeIds.length,
-          filters: data.filters,
+          filters: data.filters as Json,
           updated_at: new Date().toISOString(),
         })
         .eq("id", rowId);
@@ -71,7 +74,7 @@ export const saveSearchHistory = createServerFn({ method: "POST" })
         city,
         place_ids: data.placeIds,
         result_count: data.placeIds.length,
-        filters: data.filters,
+        filters: data.filters as Json,
       })
       .select("id")
       .single();
