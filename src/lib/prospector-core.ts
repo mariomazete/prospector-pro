@@ -85,7 +85,7 @@ export async function getCachedPlaces(
       .eq("cache_key", cacheKey(country, city, niche))
       .gt("expires_at", new Date().toISOString())
       .maybeSingle();
-    return (data?.payload as PlaceResult[]) ?? null;
+    return (data?.payload as unknown as PlaceResult[]) ?? null;
   } catch {
     return null;
   }
@@ -100,7 +100,7 @@ export async function setCachedPlaces(
     await supabaseAdmin.from("prospector_cache").upsert({
       cache_key: cacheKey(country, city, niche),
       country, city, niche,
-      payload: places as unknown as object,
+      payload: places as unknown as never,
       expires_at: expires,
     }, { onConflict: "cache_key" });
   } catch {
