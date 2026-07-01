@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -24,9 +24,20 @@ export function BusinessModal({ business, onClose }: Props) {
   const [pitch, setPitch] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (!business) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [business]);
 
   if (!business) return null;
   const score = calcOpportunityScore(business);
+  const localTime =
+    typeof business.utcOffsetMinutes === "number"
+      ? new Date(now + business.utcOffsetMinutes * 60_000).toISOString().slice(11, 16)
+      : null;
 
   const handleGenerate = async () => {
     setGenerating(true);
@@ -75,7 +86,16 @@ export function BusinessModal({ business, onClose }: Props) {
                   {business.category} · {business.city}, {business.country}
                 </p>
               </div>
-              <OpportunityBadge score={score} />
+              <div className="flex flex-col items-end gap-2">
+                <OpportunityBadge score={score} />
+                {localTime && (
+                  <div className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary tabular-nums">
+                    <Clock className="h-3 w-3" />
+                    <span>{localTime}</span>
+                    <span className="text-[10px] font-normal text-primary/70">local</span>
+                  </div>
+                )}
+              </div>
             </div>
           </DialogHeader>
         </div>
