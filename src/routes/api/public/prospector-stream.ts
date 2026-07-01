@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { citiesForCountry } from "@/lib/cities-db";
-import { placesTextSearch, toBusiness } from "@/lib/prospector-core";
+import { placesTextSearch, toBusiness, getCachedPlaces, setCachedPlaces } from "@/lib/prospector-core";
 import type { Business } from "@/lib/mock-businesses";
 
 const InputSchema = z.object({
@@ -55,7 +55,13 @@ export const Route = createFileRoute("/api/public/prospector-stream")({
                 const city = cities[idx];
                 send({ type: "city_start", city, index: idx });
                 try {
-                  const places = await placesTextSearch(`${niche} in ${city}, ${country}`);
+                  let places = await getCachedPlaces(country, city, niche);
+                  let fromCache = true;
+                  if (!places) {
+                    fromCache = false;
+                    places = await placesTextSearch(`${niche} in ${city}, ${country}`);
+                    if (places.length) await setCachedPlaces(country, city, niche, places);
+                  }
                   const fresh = places.filter((p) => {
                     if (seen.has(p.id)) { dupes++; return false; }
                     seen.add(p.id);
@@ -70,7 +76,7 @@ export const Route = createFileRoute("/api/public/prospector-stream")({
                   send({
                     type: "city_done", city, index: idx,
                     businesses, processed, totalCities: cities.length,
-                    found, dupes, errored,
+                    found, dupes, errored, fromCache,
                   });
                 } catch (err) {
                   errored++;
