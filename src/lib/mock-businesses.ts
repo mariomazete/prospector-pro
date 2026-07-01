@@ -166,5 +166,5 @@ export const COUNTRIES = [
 export const NICHES = [
   "Pet Shop", "Dentist", "Lawyer", "Restaurant", "Barbershop",
   "Beauty Salon", "Lash Studio", "Real Estate", "Gym", "Automotive",
-  "Veterinary", "Clinic",
+  "Veterinary", "Clinic", "Accountant",
 ];
