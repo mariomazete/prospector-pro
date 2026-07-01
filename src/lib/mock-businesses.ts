@@ -22,6 +22,7 @@ export interface Business {
   reviews: Review[];
   aiSummary: string[];
   isLocal: boolean;
+  utcOffsetMinutes?: number | null;
 }
 
 // Local aiSummary generator (used by real API path too)
