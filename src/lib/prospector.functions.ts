@@ -6,7 +6,7 @@ const GATEWAY = "https://connector-gateway.lovable.dev/google_maps";
 
 const SearchInput = z.object({
   country: z.string().min(1),
-  city: z.string().min(1),
+  city: z.string().optional().default(""),
   niche: z.string().min(1),
 });
 
@@ -60,7 +60,10 @@ async function resolvePhotoUrl(photoName: string, maxHeightPx = 800): Promise<st
 export const searchBusinesses = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => SearchInput.parse(d))
   .handler(async ({ data }): Promise<{ businesses: Business[]; error?: string }> => {
-    const query = `${data.niche} in ${data.city}, ${data.country}`;
+    const city = data.city?.trim() ?? "";
+    const query = city
+      ? `${data.niche} in ${city}, ${data.country}`
+      : `${data.niche} in ${data.country}`;
 
     const fieldMask = [
       "places.id",
@@ -128,7 +131,7 @@ export const searchBusinesses = createServerFn({ method: "POST" })
           name: p.displayName?.text ?? "Unknown",
           category: p.primaryTypeDisplayName?.text ?? data.niche,
           country: data.country,
-          city: data.city,
+          city: city || (p.formattedAddress?.split(",").slice(-2, -1)[0]?.trim() ?? ""),
           address: p.formattedAddress ?? "",
           phone: p.internationalPhoneNumber ?? p.nationalPhoneNumber ?? "",
           website,
