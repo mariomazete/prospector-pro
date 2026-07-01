@@ -14,112 +14,201 @@ export type Database = {
   }
   public: {
     Tables: {
-      lead_events: {
+      companies: {
         Row: {
+          address: string | null
+          ai_summary: string | null
+          attack_plan: Json | null
+          category: string | null
+          city: string | null
+          conversion_chance: number | null
+          country: string | null
+          created_at: string
+          email: string | null
+          facebook: string | null
+          first_seen_at: string
+          hours: Json | null
+          id: string
+          instagram: string | null
+          last_updated_at: string
+          lat: number | null
+          linkedin: string | null
+          lng: number | null
+          maps_url: string | null
+          name: string
+          open_now: boolean | null
+          opportunity_score: number | null
+          phone: string | null
+          photos: Json
+          pitches: Json | null
+          place_id: string
+          rating: number | null
+          reviews: Json
+          reviews_count: number | null
+          search_appearances: number
+          state: string | null
+          subcategory: string | null
+          temperature: string | null
+          updated_at: string
+          utc_offset_minutes: number | null
+          website: string | null
+          whatsapp: string | null
+        }
+        Insert: {
+          address?: string | null
+          ai_summary?: string | null
+          attack_plan?: Json | null
+          category?: string | null
+          city?: string | null
+          conversion_chance?: number | null
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          facebook?: string | null
+          first_seen_at?: string
+          hours?: Json | null
+          id?: string
+          instagram?: string | null
+          last_updated_at?: string
+          lat?: number | null
+          linkedin?: string | null
+          lng?: number | null
+          maps_url?: string | null
+          name: string
+          open_now?: boolean | null
+          opportunity_score?: number | null
+          phone?: string | null
+          photos?: Json
+          pitches?: Json | null
+          place_id: string
+          rating?: number | null
+          reviews?: Json
+          reviews_count?: number | null
+          search_appearances?: number
+          state?: string | null
+          subcategory?: string | null
+          temperature?: string | null
+          updated_at?: string
+          utc_offset_minutes?: number | null
+          website?: string | null
+          whatsapp?: string | null
+        }
+        Update: {
+          address?: string | null
+          ai_summary?: string | null
+          attack_plan?: Json | null
+          category?: string | null
+          city?: string | null
+          conversion_chance?: number | null
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          facebook?: string | null
+          first_seen_at?: string
+          hours?: Json | null
+          id?: string
+          instagram?: string | null
+          last_updated_at?: string
+          lat?: number | null
+          linkedin?: string | null
+          lng?: number | null
+          maps_url?: string | null
+          name?: string
+          open_now?: boolean | null
+          opportunity_score?: number | null
+          phone?: string | null
+          photos?: Json
+          pitches?: Json | null
+          place_id?: string
+          rating?: number | null
+          reviews?: Json
+          reviews_count?: number | null
+          search_appearances?: number
+          state?: string | null
+          subcategory?: string | null
+          temperature?: string | null
+          updated_at?: string
+          utc_offset_minutes?: number | null
+          website?: string | null
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
+      company_events: {
+        Row: {
+          company_id: string
           content: string | null
           created_at: string
           id: string
           kind: Database["public"]["Enums"]["timeline_kind"]
-          lead_id: string
           meta: Json | null
           user_id: string
         }
         Insert: {
+          company_id: string
           content?: string | null
           created_at?: string
           id?: string
           kind: Database["public"]["Enums"]["timeline_kind"]
-          lead_id: string
           meta?: Json | null
           user_id: string
         }
         Update: {
+          company_id?: string
           content?: string | null
           created_at?: string
           id?: string
           kind?: Database["public"]["Enums"]["timeline_kind"]
-          lead_id?: string
           meta?: Json | null
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "lead_events_lead_id_fkey"
-            columns: ["lead_id"]
+            foreignKeyName: "company_events_company_id_fkey"
+            columns: ["company_id"]
             isOneToOne: false
-            referencedRelation: "leads"
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
       }
-      leads: {
+      company_searches: {
         Row: {
-          address: string | null
-          category: string | null
           city: string | null
-          country: string | null
-          created_at: string
+          company_id: string
+          country: string
+          found_at: string
           id: string
-          maps_url: string | null
-          name: string
-          next_followup_at: string | null
-          notes: string | null
-          phone: string | null
-          place_id: string
-          rating: number | null
-          reviews_count: number | null
-          snapshot: Json | null
-          status: Database["public"]["Enums"]["lead_status"]
-          tags: string[]
-          updated_at: string
-          user_id: string
-          website: string | null
+          niche: string
+          user_id: string | null
         }
         Insert: {
-          address?: string | null
-          category?: string | null
           city?: string | null
-          country?: string | null
-          created_at?: string
+          company_id: string
+          country: string
+          found_at?: string
           id?: string
-          maps_url?: string | null
-          name: string
-          next_followup_at?: string | null
-          notes?: string | null
-          phone?: string | null
-          place_id: string
-          rating?: number | null
-          reviews_count?: number | null
-          snapshot?: Json | null
-          status?: Database["public"]["Enums"]["lead_status"]
-          tags?: string[]
-          updated_at?: string
-          user_id: string
-          website?: string | null
+          niche: string
+          user_id?: string | null
         }
         Update: {
-          address?: string | null
-          category?: string | null
           city?: string | null
-          country?: string | null
-          created_at?: string
+          company_id?: string
+          country?: string
+          found_at?: string
           id?: string
-          maps_url?: string | null
-          name?: string
-          next_followup_at?: string | null
-          notes?: string | null
-          phone?: string | null
-          place_id?: string
-          rating?: number | null
-          reviews_count?: number | null
-          snapshot?: Json | null
-          status?: Database["public"]["Enums"]["lead_status"]
-          tags?: string[]
-          updated_at?: string
-          user_id?: string
-          website?: string | null
+          niche?: string
+          user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "company_searches_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       prospector_cache: {
         Row: {
@@ -154,6 +243,59 @@ export type Database = {
         }
         Relationships: []
       }
+      user_company_state: {
+        Row: {
+          company_id: string
+          created_at: string
+          favorite: boolean
+          id: string
+          in_pipeline: boolean
+          next_followup_at: string | null
+          notes: string | null
+          pipeline_added_at: string | null
+          status: Database["public"]["Enums"]["company_status"]
+          tags: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          favorite?: boolean
+          id?: string
+          in_pipeline?: boolean
+          next_followup_at?: string | null
+          notes?: string | null
+          pipeline_added_at?: string | null
+          status?: Database["public"]["Enums"]["company_status"]
+          tags?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          favorite?: boolean
+          id?: string
+          in_pipeline?: boolean
+          next_followup_at?: string | null
+          notes?: string | null
+          pipeline_added_at?: string | null
+          status?: Database["public"]["Enums"]["company_status"]
+          tags?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_company_state_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -162,7 +304,17 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      lead_status: "new" | "contacted" | "negotiating" | "won" | "lost"
+      company_status:
+        | "never_prospected"
+        | "prospecting"
+        | "contacted"
+        | "replied"
+        | "meeting"
+        | "proposal"
+        | "negotiating"
+        | "client"
+        | "lost"
+        | "archived"
       timeline_kind:
         | "note"
         | "status_change"
@@ -172,6 +324,8 @@ export type Database = {
         | "whatsapp"
         | "meeting"
         | "pitch"
+        | "discovery"
+        | "update"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -299,7 +453,18 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      lead_status: ["new", "contacted", "negotiating", "won", "lost"],
+      company_status: [
+        "never_prospected",
+        "prospecting",
+        "contacted",
+        "replied",
+        "meeting",
+        "proposal",
+        "negotiating",
+        "client",
+        "lost",
+        "archived",
+      ],
       timeline_kind: [
         "note",
         "status_change",
@@ -309,6 +474,8 @@ export const Constants = {
         "whatsapp",
         "meeting",
         "pitch",
+        "discovery",
+        "update",
       ],
     },
   },
