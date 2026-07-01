@@ -218,6 +218,33 @@ export async function findCompanyByPlaceId(placeId: string): Promise<CompanyWith
   return { ...row, user_state: row.user_state && row.user_state.length > 0 ? row.user_state[0] : null };
 }
 
+/** Convert a persisted company row into the `Business` shape the modal expects. */
+import type { Business } from "@/lib/mock-businesses";
+export function companyToBusiness(c: CompanyRow): Business {
+  const photos = Array.isArray(c.photos) ? (c.photos as unknown as string[]) : [];
+  const reviews = Array.isArray(c.reviews) ? (c.reviews as unknown as Business["reviews"]) : [];
+  return {
+    id: c.place_id,
+    name: c.name,
+    category: c.category ?? "",
+    country: c.country ?? "",
+    city: c.city ?? "",
+    address: c.address ?? "",
+    phone: c.phone ?? "",
+    website: c.website,
+    rating: Number(c.rating ?? 0),
+    reviewsCount: c.reviews_count ?? 0,
+    photos,
+    hours: "",
+    mapsUrl: c.maps_url ?? "",
+    reviews,
+    aiSummary: (c.ai_summary ?? "").split("\n").filter(Boolean),
+    isLocal: false,
+    utcOffsetMinutes: c.utc_offset_minutes ?? null,
+    openNow: c.open_now ?? null,
+  };
+}
+
 /** Distinct filter facets. */
 export async function listFacets(): Promise<{ countries: string[]; categories: string[] }> {
   const { data } = await supabase
