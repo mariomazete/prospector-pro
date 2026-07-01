@@ -1,8 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import type { Business } from "./mock-businesses";
+import { calcOpportunityScore, type Business } from "./mock-businesses";
 import { placesTextSearch, toBusiness, getCachedPlaces, setCachedPlaces } from "./prospector-core";
 import { upsertCompaniesFromBusinesses } from "./companies-upsert.server";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const BusinessSchema = z.object({
   id: z.string(),
@@ -29,16 +30,41 @@ const BusinessSchema = z.object({
 });
 
 export const ensureCompany = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => BusinessSchema.parse(d))
-  .handler(async ({ data }): Promise<{ id?: string; error?: string }> => {
+  .handler(async ({ data, context }): Promise<{ id?: string; error?: string }> => {
     try {
-      await upsertCompaniesFromBusinesses([data as unknown as Business], {
-        country: data.country, city: data.city, niche: data.category,
-      });
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { data: row, error } = await supabaseAdmin
-        .from("companies").select("id").eq("place_id", data.id).maybeSingle();
-      if (error || !row) return { error: "Failed to save company." };
+      const business = data as unknown as Business;
+      const score = calcOpportunityScore(business);
+      const { data: row, error } = await context.supabase
+        .from("companies")
+        .upsert({
+          place_id: business.id,
+          name: business.name,
+          category: business.category,
+          country: business.country,
+          city: business.city,
+          address: business.address,
+          phone: business.phone || null,
+          website: business.website,
+          maps_url: business.mapsUrl,
+          rating: business.rating,
+          reviews_count: business.reviewsCount,
+          photos: business.photos,
+          reviews: business.reviews,
+          utc_offset_minutes: business.utcOffsetMinutes ?? null,
+          open_now: business.openNow ?? null,
+          opportunity_score: score,
+          temperature: score >= 85 ? "hot" : score >= 65 ? "warm" : "cold",
+          ai_summary: business.aiSummary.join("\n"),
+          last_updated_at: new Date().toISOString(),
+        }, { onConflict: "place_id" })
+        .select("id")
+        .single();
+      if (error || !row) {
+        console.error("[ensureCompany] upsert error", error);
+        return { error: "Failed to save company." };
+      }
       return { id: row.id };
     } catch (err) {
       console.error("[ensureCompany]", err);
