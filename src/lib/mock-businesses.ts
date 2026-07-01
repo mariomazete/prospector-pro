@@ -24,6 +24,22 @@ export interface Business {
   isLocal: boolean;
 }
 
+// Local aiSummary generator (used by real API path too)
+export function buildAiSummary(b: Pick<Business, "website" | "rating" | "reviewsCount">): string[] {
+  const out: string[] = [];
+  if (b.rating >= 4.5) out.push("Customers consistently praise the service quality and reputation is strong.");
+  else if (b.rating >= 4.0) out.push("Overall positive reviews, but with some concerns about consistency.");
+  else out.push("Mixed reviews — reputation could be improved with better customer touchpoints.");
+  if (b.reviewsCount >= 100) out.push("High review volume indicates real customer demand and traffic.");
+  else out.push("Low review count — a website could help capture more social proof over time.");
+  out.push(
+    b.website
+      ? "Business has an online presence but the site may look outdated or underperform on mobile."
+      : "No professional website detected — clear opportunity to establish digital presence.",
+  );
+  return out;
+}
+
 export function calcOpportunityScore(b: Business): number {
   let score = 0;
   if (!b.website) score += 50;
