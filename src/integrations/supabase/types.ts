@@ -14,6 +14,113 @@ export type Database = {
   }
   public: {
     Tables: {
+      lead_events: {
+        Row: {
+          content: string | null
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["timeline_kind"]
+          lead_id: string
+          meta: Json | null
+          user_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          kind: Database["public"]["Enums"]["timeline_kind"]
+          lead_id: string
+          meta?: Json | null
+          user_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["timeline_kind"]
+          lead_id?: string
+          meta?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_events_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          address: string | null
+          category: string | null
+          city: string | null
+          country: string | null
+          created_at: string
+          id: string
+          maps_url: string | null
+          name: string
+          next_followup_at: string | null
+          notes: string | null
+          phone: string | null
+          place_id: string
+          rating: number | null
+          reviews_count: number | null
+          snapshot: Json | null
+          status: Database["public"]["Enums"]["lead_status"]
+          tags: string[]
+          updated_at: string
+          user_id: string
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          category?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          maps_url?: string | null
+          name: string
+          next_followup_at?: string | null
+          notes?: string | null
+          phone?: string | null
+          place_id: string
+          rating?: number | null
+          reviews_count?: number | null
+          snapshot?: Json | null
+          status?: Database["public"]["Enums"]["lead_status"]
+          tags?: string[]
+          updated_at?: string
+          user_id: string
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          category?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          maps_url?: string | null
+          name?: string
+          next_followup_at?: string | null
+          notes?: string | null
+          phone?: string | null
+          place_id?: string
+          rating?: number | null
+          reviews_count?: number | null
+          snapshot?: Json | null
+          status?: Database["public"]["Enums"]["lead_status"]
+          tags?: string[]
+          updated_at?: string
+          user_id?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       prospector_cache: {
         Row: {
           cache_key: string
@@ -55,7 +162,16 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      lead_status: "new" | "contacted" | "negotiating" | "won" | "lost"
+      timeline_kind:
+        | "note"
+        | "status_change"
+        | "followup"
+        | "call"
+        | "email"
+        | "whatsapp"
+        | "meeting"
+        | "pitch"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -182,6 +298,18 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      lead_status: ["new", "contacted", "negotiating", "won", "lost"],
+      timeline_kind: [
+        "note",
+        "status_change",
+        "followup",
+        "call",
+        "email",
+        "whatsapp",
+        "meeting",
+        "pitch",
+      ],
+    },
   },
 } as const
