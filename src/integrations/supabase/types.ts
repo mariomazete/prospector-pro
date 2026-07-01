@@ -243,6 +243,45 @@ export type Database = {
         }
         Relationships: []
       }
+      search_history: {
+        Row: {
+          city: string | null
+          country: string
+          created_at: string
+          filters: Json
+          id: string
+          niche: string
+          place_ids: string[]
+          result_count: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          city?: string | null
+          country: string
+          created_at?: string
+          filters?: Json
+          id?: string
+          niche: string
+          place_ids?: string[]
+          result_count?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          city?: string | null
+          country?: string
+          created_at?: string
+          filters?: Json
+          id?: string
+          niche?: string
+          place_ids?: string[]
+          result_count?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_company_state: {
         Row: {
           company_id: string
