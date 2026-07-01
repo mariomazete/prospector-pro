@@ -8,7 +8,7 @@ export type CompanyStatus = Database["public"]["Enums"]["company_status"];
 export type TimelineKind = Database["public"]["Enums"]["timeline_kind"];
 
 export interface CompanyWithState extends CompanyRow {
-  state: UserCompanyState | null;
+  user_state: UserCompanyState | null;
 }
 
 export const STATUS_LABELS: Record<CompanyStatus, string> = {
@@ -55,7 +55,7 @@ export async function listCompanies(f: CompanyFilters = {}): Promise<{ rows: Com
   const userId = await currentUserId();
   let q = supabase
     .from("companies")
-    .select("*, state:user_company_state!left(*)", { count: "exact" })
+    .select("*, user_state:user_company_state!left(*)", { count: "exact" })
     .eq("user_company_state.user_id", userId);
 
   if (f.search) q = q.ilike("name", `%${f.search}%`);
@@ -74,16 +74,16 @@ export async function listCompanies(f: CompanyFilters = {}): Promise<{ rows: Com
   const { data, error, count } = await q;
   if (error) throw error;
 
-  let rows = ((data ?? []) as unknown as Array<CompanyRow & { state: UserCompanyState[] | null }>).map((r) => ({
+  let rows = ((data ?? []) as unknown as Array<CompanyRow & { user_state: UserCompanyState[] | null }>).map((r) => ({
     ...r,
-    state: r.state && r.state.length > 0 ? r.state[0] : null,
+    state: r.user_state && r.user_state.length > 0 ? r.state[0] : null,
   })) as CompanyWithState[];
 
   // Client-side filters that depend on state
-  if (f.favoritesOnly) rows = rows.filter((r) => r.state?.favorite);
-  if (f.neverProspectedOnly) rows = rows.filter((r) => !r.state || r.state.status === "never_prospected");
-  if (f.inPipelineOnly) rows = rows.filter((r) => r.state?.in_pipeline);
-  if (f.status) rows = rows.filter((r) => (r.state?.status ?? "never_prospected") === f.status);
+  if (f.favoritesOnly) rows = rows.filter((r) => r.user_state?.favorite);
+  if (f.neverProspectedOnly) rows = rows.filter((r) => !r.user_state || r.user_state.status === "never_prospected");
+  if (f.inPipelineOnly) rows = rows.filter((r) => r.user_state?.in_pipeline);
+  if (f.status) rows = rows.filter((r) => (r.user_state?.status ?? "never_prospected") === f.status);
 
   return { rows, total: count ?? rows.length };
 }
@@ -100,7 +100,7 @@ export async function listPipeline(): Promise<CompanyWithState[]> {
   if (error) throw error;
   return ((data ?? []) as unknown as Array<UserCompanyState & { company: CompanyRow }>).map((s) => ({
     ...s.company,
-    state: { ...s, company: undefined } as unknown as UserCompanyState,
+    user_state: { ...s, company: undefined } as unknown as UserCompanyState,
   }));
 }
 
@@ -208,13 +208,13 @@ export async function findCompanyByPlaceId(placeId: string): Promise<CompanyWith
   const userId = await currentUserId();
   const { data, error } = await supabase
     .from("companies")
-    .select("*, state:user_company_state!left(*)")
+    .select("*, user_state:user_company_state!left(*)")
     .eq("place_id", placeId)
     .eq("user_company_state.user_id", userId)
     .maybeSingle();
   if (error) throw error;
   if (!data) return null;
-  const row = data as unknown as CompanyRow & { state: UserCompanyState[] | null };
+  const row = data as unknown as CompanyRow & { user_state: UserCompanyState[] | null };
   return { ...row, state: row.state && row.state.length > 0 ? row.state[0] : null };
 }
 
