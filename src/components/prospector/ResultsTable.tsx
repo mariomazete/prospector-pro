@@ -1,9 +1,12 @@
-import { Star, ExternalLink, Eye, Image as ImageIcon, Phone } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Star, ExternalLink, Eye, Image as ImageIcon, Phone, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Business } from "@/lib/mock-businesses";
 import { calcOpportunityScore } from "@/lib/mock-businesses";
 import { OpportunityBadge } from "./OpportunityBadge";
+
+const PAGE_SIZE = 50;
 
 interface Props {
   data: Business[];
@@ -12,6 +15,17 @@ interface Props {
 }
 
 export function ResultsTable({ data, loading, onView }: Props) {
+  const [page, setPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(data.length / PAGE_SIZE));
+
+  useEffect(() => { setPage(1); }, [data]);
+  useEffect(() => { if (page > totalPages) setPage(totalPages); }, [page, totalPages]);
+
+  const pageData = useMemo(
+    () => data.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [data, page],
+  );
+
   if (loading) return <TableSkeleton />;
 
   if (data.length === 0) {
@@ -30,73 +44,83 @@ export function ResultsTable({ data, loading, onView }: Props) {
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-card">
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+      <div>
+        <table className="w-full table-fixed text-sm">
+          <colgroup>
+            <col />
+            <col className="w-20" />
+            <col className="w-20" />
+            <col className="w-24" />
+            <col className="w-40" />
+            <col className="w-20" />
+            <col className="w-32" />
+            <col className="w-28" />
+          </colgroup>
           <thead>
             <tr className="border-b border-border bg-card/50 text-left text-xs uppercase tracking-wider text-muted-foreground">
-              <th className="px-5 py-3 font-medium">Company</th>
-              <th className="px-5 py-3 font-medium">Rating</th>
-              <th className="px-5 py-3 font-medium">Reviews</th>
-              <th className="px-5 py-3 font-medium">Website</th>
-              <th className="px-5 py-3 font-medium">Phone</th>
-              <th className="px-5 py-3 font-medium">Photos</th>
-              <th className="px-5 py-3 font-medium">Opportunity</th>
-              <th className="px-5 py-3 text-right font-medium">Actions</th>
+              <th className="px-4 py-3 font-medium">Company</th>
+              <th className="px-2 py-3 font-medium">Rating</th>
+              <th className="px-2 py-3 font-medium">Reviews</th>
+              <th className="px-2 py-3 font-medium">Website</th>
+              <th className="px-2 py-3 font-medium">Phone</th>
+              <th className="px-2 py-3 font-medium">Photos</th>
+              <th className="px-2 py-3 font-medium">Opportunity</th>
+              <th className="px-4 py-3 text-right font-medium">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {data.map((b) => {
+            {pageData.map((b) => {
               const score = calcOpportunityScore(b);
               return (
                 <tr
                   key={b.id}
                   className="border-b border-border/60 transition hover:bg-accent/40"
                 >
-                  <td className="px-5 py-3.5">
+                  <td className="px-4 py-3.5">
                     <div className="flex items-center gap-3">
                       <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-xs font-semibold text-primary">
                         {b.name.charAt(0)}
                       </div>
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <div className="truncate font-medium text-foreground">{b.name}</div>
                         <div className="truncate text-xs text-muted-foreground">{b.category} · {b.city}</div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-5 py-3.5">
+                  <td className="px-2 py-3.5">
                     <div className="inline-flex items-center gap-1 text-foreground">
                       <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
                       <span className="tabular-nums">{b.rating.toFixed(1)}</span>
                     </div>
                   </td>
-                  <td className="px-5 py-3.5 tabular-nums text-muted-foreground">{b.reviewsCount}</td>
-                  <td className="px-5 py-3.5">
+                  <td className="px-2 py-3.5 tabular-nums text-muted-foreground">{b.reviewsCount}</td>
+                  <td className="px-2 py-3.5">
                     {b.website ? (
-                      <span className="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-400">
-                        Has Website
+                      <span className="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-400">
+                        Yes
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 rounded-md border border-rose-500/30 bg-rose-500/10 px-2 py-0.5 text-xs font-medium text-rose-400">
-                        No Website
+                      <span className="inline-flex items-center gap-1 rounded-md border border-rose-500/30 bg-rose-500/10 px-2 py-0.5 text-[11px] font-medium text-rose-400">
+                        None
                       </span>
                     )}
                   </td>
-                  <td className="px-5 py-3.5">
-                    <div className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <Phone className="h-3 w-3" />
-                      <span className="tabular-nums">{b.phone}</span>
+                  <td className="px-2 py-3.5">
+                    <div className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+                      <Phone className="h-3 w-3 shrink-0" />
+                      <span className="truncate tabular-nums">{b.phone || "—"}</span>
                     </div>
                   </td>
-                  <td className="px-5 py-3.5">
+                  <td className="px-2 py-3.5">
                     <div className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
                       <ImageIcon className="h-3.5 w-3.5" />
                       {b.photos.length}
                     </div>
                   </td>
-                  <td className="px-5 py-3.5">
+                  <td className="px-2 py-3.5">
                     <OpportunityBadge score={score} />
                   </td>
-                  <td className="px-5 py-3.5 text-right">
+                  <td className="px-4 py-3.5 text-right">
                     <div className="inline-flex items-center gap-1">
                       <Button
                         size="sm"
@@ -124,6 +148,38 @@ export function ResultsTable({ data, loading, onView }: Props) {
           </tbody>
         </table>
       </div>
+      {data.length > PAGE_SIZE && (
+        <div className="flex items-center justify-between gap-3 border-t border-border bg-card/50 px-4 py-3 text-xs text-muted-foreground">
+          <div>
+            Showing <span className="text-foreground">{(page - 1) * PAGE_SIZE + 1}</span>–
+            <span className="text-foreground">{Math.min(page * PAGE_SIZE, data.length)}</span> of{" "}
+            <span className="text-foreground">{data.length}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 rounded-lg text-xs"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+            >
+              <ChevronLeft className="h-3.5 w-3.5" /> Prev
+            </Button>
+            <span className="tabular-nums">
+              Page <span className="text-foreground">{page}</span> / {totalPages}
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 rounded-lg text-xs"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+            >
+              Next <ChevronRight className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
