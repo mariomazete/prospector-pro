@@ -9,6 +9,20 @@ function isNewSupabaseApiKey(value: string): boolean {
   return value.startsWith('sb_publishable_') || value.startsWith('sb_secret_');
 }
 
+function getServerSupabaseUrl(supabaseUrl: string, supabaseKey: string): string {
+  const projectId = process.env.SUPABASE_PROJECT_ID || process.env.VITE_SUPABASE_PROJECT_ID;
+
+  // Lovable exposes SUPABASE_URL through its gateway. That gateway is correct for
+  // browser/user calls, but opaque backend secret keys (`sb_secret_*`) are only
+  // promoted to the `service_role` Postgres role on the native Supabase endpoint.
+  // Admin writes must use the direct project URL so RLS is bypassed as intended.
+  if (supabaseKey.startsWith('sb_secret_') && projectId) {
+    return `https://${projectId}.supabase.co`;
+  }
+
+  return supabaseUrl;
+}
+
 function createSupabaseFetch(supabaseKey: string): typeof fetch {
   return (input, init) => {
     const headers = new Headers(
@@ -43,7 +57,9 @@ function createSupabaseAdminClient() {
     throw new Error(message);
   }
 
-  return createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+  const serverSupabaseUrl = getServerSupabaseUrl(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+  return createClient<Database>(serverSupabaseUrl, SUPABASE_SERVICE_ROLE_KEY, {
     global: {
       fetch: createSupabaseFetch(SUPABASE_SERVICE_ROLE_KEY),
     },
