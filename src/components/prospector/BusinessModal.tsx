@@ -16,6 +16,10 @@ import type { Business } from "@/lib/mock-businesses";
 import { calcOpportunityScore } from "@/lib/mock-businesses";
 import { OpportunityBadge } from "./OpportunityBadge";
 import { generatePitch, analyzeBusiness, type DeepAnalysis, type PitchSet } from "@/lib/prospector.functions";
+import { saveBusinessAsLead } from "@/lib/leads-client";
+import { useAuth } from "@/hooks/use-auth";
+import { useNavigate } from "@tanstack/react-router";
+import { Bookmark } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
@@ -24,6 +28,9 @@ interface Props {
 }
 
 export function BusinessModal({ business, onClose }: Props) {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [saving, setSaving] = useState(false);
   const [pitches, setPitches] = useState<PitchSet | null>(null);
   const [generating, setGenerating] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
@@ -96,6 +103,23 @@ export function BusinessModal({ business, onClose }: Props) {
     setTimeout(() => setCopiedKey(null), 1500);
   };
 
+  const handleSaveLead = async () => {
+    if (!user) {
+      toast("Sign in to save leads");
+      navigate({ to: "/auth" });
+      return;
+    }
+    setSaving(true);
+    try {
+      await saveBusinessAsLead(business);
+      toast.success("Saved to CRM");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <Dialog open={!!business} onOpenChange={(o) => { if (!o) { onClose(); setPitches(null); setAnalysis(null); } }}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border-border bg-card p-0">
@@ -127,6 +151,10 @@ export function BusinessModal({ business, onClose }: Props) {
                     <span className="text-[10px] font-normal text-primary/70">local</span>
                   </div>
                 )}
+                <Button size="sm" onClick={handleSaveLead} disabled={saving} className="h-8 rounded-lg bg-primary text-xs hover:bg-primary/90">
+                  <Bookmark className="mr-1 h-3.5 w-3.5" />
+                  {saving ? "Saving…" : "Save to CRM"}
+                </Button>
               </div>
             </div>
           </DialogHeader>

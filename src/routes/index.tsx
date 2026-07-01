@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
-import { Sparkles, Download, Zap } from "lucide-react";
+import { Sparkles, Download, Zap, Briefcase, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "@tanstack/react-router";
+import { useAuth } from "@/hooks/use-auth";
 import { SearchFilters, type SearchValues } from "@/components/prospector/SearchFilters";
 import { QuickFilters, type QuickFilterState } from "@/components/prospector/QuickFilters";
 import { ResultsTable } from "@/components/prospector/ResultsTable";
@@ -26,6 +28,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  const { user } = useAuth();
   const [results, setResults] = useState<Business[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
@@ -219,6 +222,19 @@ function Index() {
             >
               <Download className="mr-1.5 h-3.5 w-3.5" /> Export CSV
             </Button>
+            {user ? (
+              <Link to="/crm">
+                <Button size="sm" className="h-9 rounded-lg bg-primary text-xs hover:bg-primary/90">
+                  <Briefcase className="mr-1.5 h-3.5 w-3.5" /> CRM
+                </Button>
+              </Link>
+            ) : (
+              <Link to="/auth">
+                <Button size="sm" variant="outline" className="h-9 rounded-lg text-xs">
+                  <LogIn className="mr-1.5 h-3.5 w-3.5" /> Sign in
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </header>
