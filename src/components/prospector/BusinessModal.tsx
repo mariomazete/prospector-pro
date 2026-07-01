@@ -16,10 +16,18 @@ import type { Business } from "@/lib/mock-businesses";
 import { calcOpportunityScore } from "@/lib/mock-businesses";
 import { OpportunityBadge } from "./OpportunityBadge";
 import { generatePitch, analyzeBusiness, ensureCompany, type DeepAnalysis, type PitchSet } from "@/lib/prospector.functions";
-import { addToPipeline, findCompanyByPlaceId, toggleFavorite } from "@/lib/companies-client";
+import {
+  addToPipeline, findCompanyByPlaceId, toggleFavorite,
+  changeStatus, updateStateMeta, listEvents, addEvent,
+  STATUS_LABELS, type CompanyStatus, type CompanyEvent, type UserCompanyState,
+} from "@/lib/companies-client";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "@tanstack/react-router";
-import { Bookmark, Heart } from "lucide-react";
+import { Bookmark, Heart, Calendar, Tag, History } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
@@ -34,6 +42,12 @@ export function BusinessModal({ business, onClose }: Props) {
   const [favorite, setFavorite] = useState(false);
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [inPipeline, setInPipeline] = useState(false);
+  const [status, setStatus] = useState<CompanyStatus>("never_prospected");
+  const [notes, setNotes] = useState("");
+  const [tagsInput, setTagsInput] = useState("");
+  const [followup, setFollowup] = useState("");
+  const [savingMeta, setSavingMeta] = useState(false);
+  const [events, setEvents] = useState<CompanyEvent[]>([]);
   const [pitches, setPitches] = useState<PitchSet | null>(null);
   const [generating, setGenerating] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
@@ -53,6 +67,11 @@ export function BusinessModal({ business, onClose }: Props) {
     setFavorite(false);
     setCompanyId(null);
     setInPipeline(false);
+    setStatus("never_prospected");
+    setNotes("");
+    setTagsInput("");
+    setFollowup("");
+    setEvents([]);
     if (business && user) {
       (async () => {
         try {
@@ -63,12 +82,25 @@ export function BusinessModal({ business, onClose }: Props) {
           }
           if (!c) return;
           setCompanyId(c.id);
-          setFavorite(!!c.user_state?.favorite);
-          setInPipeline(!!c.user_state?.in_pipeline);
+          applyState(c.user_state ?? null);
+          try { setEvents(await listEvents(c.id)); } catch {}
         } catch {}
       })();
     }
   }, [business, user]);
+
+  function applyState(s: UserCompanyState | null) {
+    setFavorite(!!s?.favorite);
+    setInPipeline(!!s?.in_pipeline);
+    setStatus((s?.status as CompanyStatus) ?? "never_prospected");
+    setNotes(s?.notes ?? "");
+    setTagsInput((s?.tags ?? []).join(", "));
+    setFollowup(s?.next_followup_at ? s.next_followup_at.slice(0, 16) : "");
+  }
+
+  const refreshEvents = async (id: string) => {
+    try { setEvents(await listEvents(id)); } catch {}
+  };
 
   if (!business) return null;
   const score = calcOpportunityScore(business);
@@ -93,7 +125,13 @@ export function BusinessModal({ business, onClose }: Props) {
     try {
       const res = await generatePitch({ data: payload });
       if (res.error || !res.pitches) toast.error(res.error ?? "No pitch");
-      else setPitches(res.pitches);
+      else {
+        setPitches(res.pitches);
+        if (companyId) {
+          await addEvent(companyId, "pitch", "AI pitches generated (Formal / Consultive / WhatsApp)").catch(() => {});
+          refreshEvents(companyId);
+        }
+      }
     } catch (err) {
       console.error(err);
       toast.error("Failed to generate pitch.");
@@ -109,7 +147,13 @@ export function BusinessModal({ business, onClose }: Props) {
         data: { ...payload, reviews: business.reviews.map((r) => r.text) },
       });
       if (res.error || !res.analysis) toast.error(res.error ?? "No analysis");
-      else setAnalysis(res.analysis);
+      else {
+        setAnalysis(res.analysis);
+        if (companyId) {
+          await addEvent(companyId, "discovery", "AI sales strategy generated").catch(() => {});
+          refreshEvents(companyId);
+        }
+      }
     } catch (err) {
       console.error(err);
       toast.error("Failed to analyze.");
@@ -141,11 +185,48 @@ export function BusinessModal({ business, onClose }: Props) {
       }
       await addToPipeline(id);
       setInPipeline(true);
+      setStatus("prospecting");
+      refreshEvents(id);
       toast.success("Added to Pipeline");
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
       setAddingPipeline(false);
+    }
+  };
+
+  const handleStatusChange = async (to: CompanyStatus) => {
+    if (!companyId) return;
+    const prev = status;
+    setStatus(to);
+    try {
+      await changeStatus(companyId, prev, to);
+      if (to !== "never_prospected" && !inPipeline) setInPipeline(true);
+      refreshEvents(companyId);
+    } catch (e) {
+      setStatus(prev);
+      toast.error((e as Error).message);
+    }
+  };
+
+  const handleSaveMeta = async () => {
+    if (!companyId) return;
+    setSavingMeta(true);
+    try {
+      const tags = tagsInput.split(",").map((t) => t.trim()).filter(Boolean);
+      await updateStateMeta(companyId, {
+        notes: notes || null,
+        tags,
+        next_followup_at: followup ? new Date(followup).toISOString() : null,
+      });
+      if (notes.trim()) await addEvent(companyId, "note", notes.trim()).catch(() => {});
+      if (followup) await addEvent(companyId, "followup", `Follow-up scheduled for ${new Date(followup).toLocaleString()}`).catch(() => {});
+      refreshEvents(companyId);
+      toast.success("Saved");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSavingMeta(false);
     }
   };
 
