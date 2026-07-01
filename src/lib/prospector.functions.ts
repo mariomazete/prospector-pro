@@ -30,6 +30,7 @@ interface PlaceResult {
   photos?: PlacesPhoto[];
   reviews?: PlacesReview[];
   primaryTypeDisplayName?: { text?: string };
+  utcOffsetMinutes?: number;
 }
 
 function gatewayHeaders(extra?: Record<string, string>) {
@@ -79,6 +80,7 @@ export const searchBusinesses = createServerFn({ method: "POST" })
       "places.photos",
       "places.reviews",
       "places.primaryTypeDisplayName",
+      "places.utcOffsetMinutes",
     ].join(",");
 
     // Places API text search caps at 20 per page, max 3 pages (60 results).
@@ -153,6 +155,7 @@ export const searchBusinesses = createServerFn({ method: "POST" })
           isLocal: true,
           reviews,
           aiSummary: buildAiSummary({ website, rating, reviewsCount }),
+          utcOffsetMinutes: typeof p.utcOffsetMinutes === "number" ? p.utcOffsetMinutes : null,
         };
       }),
     );
