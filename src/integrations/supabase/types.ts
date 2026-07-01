@@ -301,7 +301,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      debug_auth_role: { Args: never; Returns: string }
     }
     Enums: {
       company_status:
