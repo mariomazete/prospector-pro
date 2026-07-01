@@ -37,9 +37,10 @@ export const ensureCompany = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => BusinessSchema.parse(d))
   .handler(async ({ data, context }): Promise<{ id?: string; error?: string }> => {
     try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const business = data as unknown as Business;
       const score = calcOpportunityScore(business);
-      const { data: row, error } = await context.supabase
+      const { data: row, error } = await supabaseAdmin
         .from("companies")
         .upsert({
           place_id: business.id,
@@ -68,6 +69,13 @@ export const ensureCompany = createServerFn({ method: "POST" })
         console.error("[ensureCompany] upsert error", error);
         return { error: "Failed to save company." };
       }
+      await supabaseAdmin.from("company_searches").insert({
+        company_id: row.id,
+        user_id: context.userId,
+        niche: business.category || "Unknown",
+        country: business.country || "Unknown",
+        city: business.city || null,
+      });
       return { id: row.id };
     } catch (err) {
       console.error("[ensureCompany]", err);
