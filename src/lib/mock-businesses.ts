@@ -23,6 +23,7 @@ export interface Business {
   aiSummary: string[];
   isLocal: boolean;
   utcOffsetMinutes?: number | null;
+  openNow?: boolean | null;
 }
 
 // Local aiSummary generator (used by real API path too)

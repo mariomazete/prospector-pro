@@ -18,7 +18,7 @@ interface PlaceResult {
   rating?: number;
   userRatingCount?: number;
   googleMapsUri?: string;
-  regularOpeningHours?: { weekdayDescriptions?: string[] };
+  regularOpeningHours?: { weekdayDescriptions?: string[]; openNow?: boolean };
   photos?: PlacesPhoto[];
   reviews?: PlacesReview[];
   primaryTypeDisplayName?: { text?: string };
@@ -179,6 +179,7 @@ export async function toBusiness(
     reviews,
     aiSummary: buildAiSummary({ website, rating, reviewsCount }),
     utcOffsetMinutes: typeof p.utcOffsetMinutes === "number" ? p.utcOffsetMinutes : null,
+    openNow: typeof p.regularOpeningHours?.openNow === "boolean" ? p.regularOpeningHours.openNow : null,
   };
 }
 
