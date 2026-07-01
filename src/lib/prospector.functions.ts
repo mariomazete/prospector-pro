@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { Business } from "./mock-businesses";
 import { placesTextSearch, toBusiness, getCachedPlaces, setCachedPlaces } from "./prospector-core";
+import { upsertCompaniesFromBusinesses } from "./companies-upsert.server";
 
 const SearchInput = z.object({
   country: z.string().min(1),
@@ -25,6 +26,10 @@ export const searchBusinesses = createServerFn({ method: "POST" })
       const results = await Promise.all(
         places.map((p) => toBusiness(p, data.country, city, data.niche)),
       );
+      // Fire-and-forget: auto-save to global companies base
+      upsertCompaniesFromBusinesses(results, {
+        country: data.country, city, niche: data.niche,
+      }).catch(() => {});
       return { businesses: results };
     } catch (err) {
       console.error("[prospector] search error", err);
