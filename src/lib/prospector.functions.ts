@@ -81,29 +81,39 @@ export const searchBusinesses = createServerFn({ method: "POST" })
       "places.primaryTypeDisplayName",
     ].join(",");
 
-    let res: Response;
+    // Places API text search caps at 20 per page, max 3 pages (60 results).
+    // Paginate to maximize coverage, especially for country-wide searches.
+    const places: PlaceResult[] = [];
+    let pageToken: string | undefined;
     try {
-      res = await fetch(`${GATEWAY}/places/v1/places:searchText`, {
-        method: "POST",
-        headers: gatewayHeaders({
-          "Content-Type": "application/json",
-          "X-Goog-FieldMask": fieldMask,
-        }),
-        body: JSON.stringify({ textQuery: query, pageSize: 20 }),
-      });
+      for (let i = 0; i < 3; i++) {
+        const body: Record<string, unknown> = { textQuery: query, pageSize: 20 };
+        if (pageToken) body.pageToken = pageToken;
+        const res = await fetch(`${GATEWAY}/places/v1/places:searchText`, {
+          method: "POST",
+          headers: gatewayHeaders({
+            "Content-Type": "application/json",
+            "X-Goog-FieldMask": `${fieldMask},nextPageToken`,
+          }),
+          body: JSON.stringify(body),
+        });
+        if (!res.ok) {
+          const txt = await res.text().catch(() => "");
+          console.error("[prospector] Places error", res.status, txt);
+          if (i === 0) return { businesses: [], error: `Google Places error (${res.status}).` };
+          break;
+        }
+        const json = (await res.json()) as { places?: PlaceResult[]; nextPageToken?: string };
+        if (json.places) places.push(...json.places);
+        if (!json.nextPageToken) break;
+        pageToken = json.nextPageToken;
+        // nextPageToken needs a short delay before it becomes valid
+        await new Promise((r) => setTimeout(r, 2000));
+      }
     } catch (err) {
       console.error("[prospector] network error", err);
-      return { businesses: [], error: "Network error contacting Google Places." };
+      if (places.length === 0) return { businesses: [], error: "Network error contacting Google Places." };
     }
-
-    if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      console.error("[prospector] Places error", res.status, body);
-      return { businesses: [], error: `Google Places error (${res.status}).` };
-    }
-
-    const json = (await res.json()) as { places?: PlaceResult[] };
-    const places = json.places ?? [];
 
     // Resolve first photo per business in parallel (cap cost)
     const results = await Promise.all(
