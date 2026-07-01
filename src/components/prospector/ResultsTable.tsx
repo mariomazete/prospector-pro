@@ -74,7 +74,8 @@ export function ResultsTable({ data, loading, onView }: Props) {
               return (
                 <tr
                   key={b.id}
-                  className="border-b border-border/60 transition hover:bg-accent/40"
+                  onClick={() => onView(b)}
+                  className="cursor-pointer border-b border-border/60 transition hover:bg-accent/40"
                 >
                   <td className="px-4 py-3.5">
                     <div className="flex items-center gap-3">
@@ -121,7 +122,10 @@ export function ResultsTable({ data, loading, onView }: Props) {
                     <OpportunityBadge score={score} />
                   </td>
                   <td className="px-4 py-3.5 text-right">
-                    <div className="inline-flex items-center gap-1">
+                    <div
+                      className="inline-flex items-center gap-1"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <Button
                         size="sm"
                         variant="ghost"
