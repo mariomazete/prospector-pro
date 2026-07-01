@@ -5,14 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { SearchFilters, type SearchValues } from "@/components/prospector/SearchFilters";
-import { QuickFilters, type QuickFilterState } from "@/components/prospector/QuickFilters";
+import { QuickFilters } from "@/components/prospector/QuickFilters";
 import { ResultsTable } from "@/components/prospector/ResultsTable";
 import { BusinessModal } from "@/components/prospector/BusinessModal";
+import { RecentSearches } from "@/components/prospector/RecentSearches";
 import {
   calcOpportunityScore,
   type Business,
 } from "@/lib/mock-businesses";
 import { searchBusinesses } from "@/lib/prospector.functions";
+import { saveSearchHistory, loadSearchHistory, type SearchHistoryRow } from "@/lib/search-history.functions";
+import { prospectorStore, useProspectorStore } from "@/lib/prospector-store";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
@@ -29,32 +32,45 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const { user } = useAuth();
-  const [results, setResults] = useState<Business[]>([]);
+  const store = useProspectorStore();
+  const results = store.results;
+  const searched = store.searched;
+  const progress = store.progress;
+  const quick = store.quick;
   const [loading, setLoading] = useState(false);
-  const [searched, setSearched] = useState(false);
   const [active, setActive] = useState<Business | null>(null);
-  const [progress, setProgress] = useState<{
-    country: string;
-    currentCity: string;
-    processed: number;
-    total: number;
-    found: number;
-    dupes: number;
-    errored: number;
-    startedAt: number;
-  } | null>(null);
+  const [historyToken, setHistoryToken] = useState(0);
   const abortRef = useRef<AbortController | null>(null);
-  const [quick, setQuick] = useState<QuickFilterState>({
-    noWebsite: false,
-    minRating45: false,
-    minReviews50: false,
-    highOpportunity: false,
-  });
+
+  const setResults = (r: Business[]) => prospectorStore.set({ results: r });
+  const setSearched = (v: boolean) => prospectorStore.set({ searched: v });
+  const setProgress: React.Dispatch<React.SetStateAction<typeof progress>> = (v) => {
+    prospectorStore.set((s) => ({
+      progress: typeof v === "function" ? (v as (p: typeof progress) => typeof progress)(s.progress) : v,
+    }));
+  };
+  const setQuick = (q: typeof quick) => prospectorStore.set({ quick: q });
+
+  const persistHistory = async (v: SearchValues, list: Business[]) => {
+    if (!user || list.length === 0) return;
+    try {
+      await saveSearchHistory({
+        data: {
+          niche: v.niche,
+          country: v.country,
+          city: v.city.trim() || null,
+          placeIds: list.map((b) => b.id),
+          filters: {},
+        },
+      });
+      setHistoryToken((t) => t + 1);
+    } catch (e) { console.error(e); }
+  };
 
   const handleSearch = async (v: SearchValues) => {
     setLoading(true);
     setSearched(true);
-    setProgress(null);
+    prospectorStore.set({ progress: null, filters: v });
     setResults([]);
     const city = v.city.trim();
 
@@ -135,6 +151,7 @@ function Index() {
             }
           }
         }
+        await persistHistory(v, collected);
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
           console.error(err);
@@ -155,6 +172,7 @@ function Index() {
       );
       setResults(sorted);
       if (!res.error && sorted.length === 0) toast("No results found for this query.");
+      await persistHistory(v, sorted);
     } catch (err) {
       console.error(err);
       toast.error("Search failed. Please try again.");
@@ -166,6 +184,34 @@ function Index() {
 
   const cancelScan = () => {
     abortRef.current?.abort();
+  };
+
+  const openHistory = async (row: SearchHistoryRow) => {
+    setLoading(true);
+    setSearched(true);
+    prospectorStore.set({
+      progress: null,
+      filters: { country: row.country, city: row.city ?? "", niche: row.niche },
+      historyId: row.id,
+    });
+    try {
+      const res = await loadSearchHistory({ data: { id: row.id } });
+      if (res.error) toast.error(res.error);
+      const sorted = [...res.businesses].sort(
+        (a, b) => calcOpportunityScore(b) - calcOpportunityScore(a),
+      );
+      setResults(sorted);
+      toast.success(`Loaded ${sorted.length} companies from history.`);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load search.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const refreshHistory = (row: SearchHistoryRow) => {
+    handleSearch({ country: row.country, city: row.city ?? "", niche: row.niche });
   };
 
   const filtered = useMemo(() => {
@@ -265,6 +311,13 @@ function Index() {
         {/* Filters */}
         <div className="space-y-3">
           <SearchFilters onSearch={handleSearch} loading={loading} />
+          {user && (
+            <RecentSearches
+              onOpen={openHistory}
+              onRefresh={refreshHistory}
+              refreshToken={historyToken}
+            />
+          )}
           {progress && (
             <ScanProgress progress={progress} loading={loading} onCancel={cancelScan} />
           )}
