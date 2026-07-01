@@ -4,6 +4,48 @@ import type { Business } from "./mock-businesses";
 import { placesTextSearch, toBusiness, getCachedPlaces, setCachedPlaces } from "./prospector-core";
 import { upsertCompaniesFromBusinesses } from "./companies-upsert.server";
 
+const BusinessSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  category: z.string(),
+  country: z.string(),
+  city: z.string(),
+  address: z.string(),
+  phone: z.string(),
+  website: z.string().nullable(),
+  rating: z.number(),
+  reviewsCount: z.number(),
+  photos: z.array(z.string()),
+  hours: z.string(),
+  mapsUrl: z.string(),
+  reviews: z.array(z.object({
+    author: z.string(), rating: z.number(), text: z.string(),
+    sentiment: z.enum(["positive", "negative"]),
+  })),
+  aiSummary: z.array(z.string()),
+  isLocal: z.boolean(),
+  utcOffsetMinutes: z.number().nullable().optional(),
+  openNow: z.boolean().nullable().optional(),
+});
+
+export const ensureCompany = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => BusinessSchema.parse(d))
+  .handler(async ({ data }): Promise<{ id?: string; error?: string }> => {
+    try {
+      await upsertCompaniesFromBusinesses([data as unknown as Business], {
+        country: data.country, city: data.city, niche: data.category,
+      });
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: row, error } = await supabaseAdmin
+        .from("companies").select("id").eq("place_id", data.id).maybeSingle();
+      if (error || !row) return { error: "Failed to save company." };
+      return { id: row.id };
+    } catch (err) {
+      console.error("[ensureCompany]", err);
+      return { error: "Failed to save company." };
+    }
+  });
+
 const SearchInput = z.object({
   country: z.string().min(1),
   city: z.string().optional().default(""),
