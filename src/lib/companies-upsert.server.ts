@@ -36,7 +36,7 @@ export async function upsertCompaniesFromBusinesses(
         opportunity_score: score,
         temperature:
           score >= 85 ? "hot" : score >= 65 ? "warm" : "cold",
-        ai_summary: b.aiSummary,
+        ai_summary: b.aiSummary.join("\n"),
         last_updated_at: new Date().toISOString(),
       };
     });
