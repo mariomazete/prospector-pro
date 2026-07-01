@@ -76,7 +76,7 @@ export async function listCompanies(f: CompanyFilters = {}): Promise<{ rows: Com
 
   let rows = ((data ?? []) as unknown as Array<CompanyRow & { user_state: UserCompanyState[] | null }>).map((r) => ({
     ...r,
-    state: r.user_state && r.user_state.length > 0 ? r.state[0] : null,
+    user_state: r.user_state && r.user_state.length > 0 ? r.user_state[0] : null,
   })) as CompanyWithState[];
 
   // Client-side filters that depend on state
@@ -215,7 +215,7 @@ export async function findCompanyByPlaceId(placeId: string): Promise<CompanyWith
   if (error) throw error;
   if (!data) return null;
   const row = data as unknown as CompanyRow & { user_state: UserCompanyState[] | null };
-  return { ...row, state: row.state && row.state.length > 0 ? row.state[0] : null };
+  return { ...row, user_state: row.user_state && row.user_state.length > 0 ? row.user_state[0] : null };
 }
 
 /** Distinct filter facets. */
