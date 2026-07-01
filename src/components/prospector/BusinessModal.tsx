@@ -456,6 +456,35 @@ export function BusinessModal({ business, onClose }: Props) {
               </p>
             )}
           </section>
+
+          {user && companyId && (
+            <section className="rounded-xl border border-border bg-background/40 p-4">
+              <h4 className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                <History className="h-3.5 w-3.5 text-primary" /> Timeline
+                <span className="ml-auto text-[10px] normal-case tracking-normal">{events.length} events</span>
+              </h4>
+              {events.length === 0 ? (
+                <p className="text-xs text-muted-foreground">No activity yet.</p>
+              ) : (
+                <ol className="space-y-2 border-l border-border pl-3">
+                  {events.map((e) => (
+                    <li key={e.id} className="relative">
+                      <span className="absolute -left-[15px] top-1.5 h-2 w-2 rounded-full bg-primary" />
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="text-[11px] font-medium uppercase tracking-wider text-primary/90">
+                          {e.kind.replace("_", " ")}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {new Date(e.created_at).toLocaleString()}
+                        </span>
+                      </div>
+                      {e.content && <p className="mt-0.5 text-sm text-foreground/90">{e.content}</p>}
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </section>
+          )}
         </div>
       </DialogContent>
     </Dialog>
