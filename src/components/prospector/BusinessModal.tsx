@@ -15,7 +15,7 @@ import {
 import type { Business } from "@/lib/mock-businesses";
 import { calcOpportunityScore } from "@/lib/mock-businesses";
 import { OpportunityBadge } from "./OpportunityBadge";
-import { generatePitch, analyzeBusiness, type DeepAnalysis, type PitchSet } from "@/lib/prospector.functions";
+import { generatePitch, analyzeBusiness, ensureCompany, type DeepAnalysis, type PitchSet } from "@/lib/prospector.functions";
 import { addToPipeline, findCompanyByPlaceId, toggleFavorite } from "@/lib/companies-client";
 import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "@tanstack/react-router";
@@ -54,12 +54,19 @@ export function BusinessModal({ business, onClose }: Props) {
     setCompanyId(null);
     setInPipeline(false);
     if (business && user) {
-      findCompanyByPlaceId(business.id).then((c) => {
-        if (!c) return;
-        setCompanyId(c.id);
-        setFavorite(!!c.user_state?.favorite);
-        setInPipeline(!!c.user_state?.in_pipeline);
-      }).catch(() => {});
+      (async () => {
+        try {
+          let c = await findCompanyByPlaceId(business.id);
+          if (!c) {
+            const res = await ensureCompany({ data: business });
+            if (res.id) c = await findCompanyByPlaceId(business.id);
+          }
+          if (!c) return;
+          setCompanyId(c.id);
+          setFavorite(!!c.user_state?.favorite);
+          setInPipeline(!!c.user_state?.in_pipeline);
+        } catch {}
+      })();
     }
   }, [business, user]);
 
@@ -123,13 +130,16 @@ export function BusinessModal({ business, onClose }: Props) {
       navigate({ to: "/auth" });
       return;
     }
-    if (!companyId) {
-      toast.error("Company not yet saved. Try again in a moment.");
-      return;
-    }
     setAddingPipeline(true);
     try {
-      await addToPipeline(companyId);
+      let id = companyId;
+      if (!id) {
+        const res = await ensureCompany({ data: business });
+        if (!res.id) throw new Error(res.error ?? "Failed to save");
+        id = res.id;
+        setCompanyId(id);
+      }
+      await addToPipeline(id);
       setInPipeline(true);
       toast.success("Added to Pipeline");
     } catch (e) {
@@ -141,11 +151,19 @@ export function BusinessModal({ business, onClose }: Props) {
 
   const handleToggleFavorite = async () => {
     if (!user) { navigate({ to: "/auth" }); return; }
-    if (!companyId) return;
+    let id = companyId;
+    if (!id) {
+      try {
+        const res = await ensureCompany({ data: business });
+        if (!res.id) return;
+        id = res.id;
+        setCompanyId(id);
+      } catch { return; }
+    }
     const next = !favorite;
     setFavorite(next);
     try {
-      await toggleFavorite(companyId, next);
+      await toggleFavorite(id, next);
     } catch (e) {
       setFavorite(!next);
       toast.error((e as Error).message);
@@ -188,7 +206,6 @@ export function BusinessModal({ business, onClose }: Props) {
                     size="sm"
                     variant="ghost"
                     onClick={handleToggleFavorite}
-                    disabled={!companyId}
                     className="h-8 w-8 rounded-lg p-0"
                     aria-label="Toggle favorite"
                   >
