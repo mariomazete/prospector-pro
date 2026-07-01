@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Sparkles, Download, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SearchFilters, type SearchValues } from "@/components/prospector/SearchFilters";
@@ -30,6 +30,17 @@ function Index() {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [active, setActive] = useState<Business | null>(null);
+  const [progress, setProgress] = useState<{
+    country: string;
+    currentCity: string;
+    processed: number;
+    total: number;
+    found: number;
+    dupes: number;
+    errored: number;
+    startedAt: number;
+  } | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
   const [quick, setQuick] = useState<QuickFilterState>({
     noWebsite: false,
     minRating45: false,
@@ -40,6 +51,99 @@ function Index() {
   const handleSearch = async (v: SearchValues) => {
     setLoading(true);
     setSearched(true);
+    setProgress(null);
+    setResults([]);
+    const city = v.city.trim();
+
+    if (!city) {
+      // Country-wide streaming scan
+      const ctrl = new AbortController();
+      abortRef.current = ctrl;
+      try {
+        const res = await fetch("/api/public/prospector-stream", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ country: v.country, niche: v.niche }),
+          signal: ctrl.signal,
+        });
+        if (!res.ok || !res.body) {
+          const msg = await res.text().catch(() => "");
+          toast.error(msg || `Scan failed (${res.status}).`);
+          setLoading(false);
+          return;
+        }
+        const seenIds = new Set<string>();
+        const collected: Business[] = [];
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buf = "";
+        const startedAt = Date.now();
+        setProgress({
+          country: v.country, currentCity: "…", processed: 0, total: 0,
+          found: 0, dupes: 0, errored: 0, startedAt,
+        });
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          const lines = buf.split("\n");
+          buf = lines.pop() ?? "";
+          for (const line of lines) {
+            if (!line.trim()) continue;
+            let ev: {
+              type: string;
+              city?: string;
+              totalCities?: number;
+              processed?: number;
+              found?: number;
+              dupes?: number;
+              errored?: number;
+              businesses?: Business[];
+            };
+            try { ev = JSON.parse(line); } catch { continue; }
+            if (ev.type === "start") {
+              setProgress((p) => p && { ...p, total: ev.totalCities ?? 0 });
+            } else if (ev.type === "city_start") {
+              setProgress((p) => p && { ...p, currentCity: ev.city ?? p.currentCity });
+            } else if (ev.type === "city_done" || ev.type === "city_error") {
+              if (ev.businesses?.length) {
+                for (const b of ev.businesses) {
+                  if (!seenIds.has(b.id)) {
+                    seenIds.add(b.id);
+                    collected.push(b);
+                  }
+                }
+                setResults([...collected].sort(
+                  (a, b) => calcOpportunityScore(b) - calcOpportunityScore(a),
+                ));
+              }
+              setProgress((p) => p && {
+                ...p,
+                processed: ev.processed ?? p.processed,
+                total: ev.totalCities ?? p.total,
+                found: ev.found ?? p.found,
+                dupes: ev.dupes ?? p.dupes,
+                errored: ev.errored ?? p.errored,
+              });
+            } else if (ev.type === "done") {
+              toast.success(
+                `Scan complete — ${ev.found ?? collected.length} businesses across ${ev.processed} cities.`,
+              );
+            }
+          }
+        }
+      } catch (err) {
+        if ((err as Error).name !== "AbortError") {
+          console.error(err);
+          toast.error("National scan failed.");
+        }
+      } finally {
+        abortRef.current = null;
+        setLoading(false);
+      }
+      return;
+    }
+
     try {
       const res = await searchBusinesses({ data: v });
       if (res.error) toast.error(res.error);
@@ -55,6 +159,10 @@ function Index() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const cancelScan = () => {
+    abortRef.current?.abort();
   };
 
   const filtered = useMemo(() => {
@@ -134,6 +242,9 @@ function Index() {
         {/* Filters */}
         <div className="space-y-3">
           <SearchFilters onSearch={handleSearch} loading={loading} />
+          {progress && (
+            <ScanProgress progress={progress} loading={loading} onCancel={cancelScan} />
+          )}
           {searched && (
             <QuickFilters
               value={quick}
@@ -155,6 +266,67 @@ function Index() {
       </main>
 
       <BusinessModal business={active} onClose={() => setActive(null)} />
+    </div>
+  );
+}
+
+function ScanProgress({
+  progress, loading, onCancel,
+}: {
+  progress: {
+    country: string; currentCity: string; processed: number; total: number;
+    found: number; dupes: number; errored: number; startedAt: number;
+  };
+  loading: boolean;
+  onCancel: () => void;
+}) {
+  const pct = progress.total > 0 ? Math.min(100, (progress.processed / progress.total) * 100) : 0;
+  const elapsed = (Date.now() - progress.startedAt) / 1000;
+  const rate = progress.processed > 0 ? elapsed / progress.processed : 0;
+  const remainingSec = rate * Math.max(0, progress.total - progress.processed);
+  const eta = remainingSec > 60
+    ? `${Math.ceil(remainingSec / 60)} min`
+    : `${Math.ceil(remainingSec)}s`;
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-xs uppercase tracking-wider text-muted-foreground">
+            Scanning {progress.country}
+          </div>
+          <div className="mt-1 truncate text-sm font-medium">
+            {loading ? `Current city: ${progress.currentCity}` : "Scan complete"}
+          </div>
+        </div>
+        {loading && (
+          <Button variant="ghost" size="sm" onClick={onCancel} className="h-8 rounded-lg text-xs">
+            Cancel
+          </Button>
+        )}
+      </div>
+      <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-input/40">
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-primary to-blue-400 transition-all"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] text-muted-foreground sm:grid-cols-5">
+        <Stat label="Cities" value={`${progress.processed}/${progress.total}`} />
+        <Stat label="Found" value={String(progress.found)} />
+        <Stat label="Duplicates" value={String(progress.dupes)} />
+        <Stat label="Errors" value={String(progress.errored)} />
+        <Stat label="ETA" value={loading ? eta : "—"} />
+      </div>
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-border/60 bg-background/40 px-2.5 py-1.5">
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground/80">{label}</div>
+      <div className="text-xs font-medium text-foreground">{value}</div>
     </div>
   );
 }
