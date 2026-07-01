@@ -4,6 +4,9 @@ import { calcOpportunityScore, type Business } from "./mock-businesses";
 import { placesTextSearch, toBusiness, getCachedPlaces, setCachedPlaces } from "./prospector-core";
 import { upsertCompaniesFromBusinesses } from "./companies-upsert.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Database } from "@/integrations/supabase/types";
+
+type CompanyInsert = Database["public"]["Tables"]["companies"]["Insert"];
 
 const BusinessSchema = z.object({
   id: z.string(),
@@ -50,8 +53,8 @@ export const ensureCompany = createServerFn({ method: "POST" })
           maps_url: business.mapsUrl,
           rating: business.rating,
           reviews_count: business.reviewsCount,
-          photos: business.photos,
-          reviews: business.reviews,
+          photos: business.photos as CompanyInsert["photos"],
+          reviews: business.reviews as unknown as CompanyInsert["reviews"],
           utc_offset_minutes: business.utcOffsetMinutes ?? null,
           open_now: business.openNow ?? null,
           opportunity_score: score,
