@@ -12,22 +12,12 @@ import {
 import type { Business } from "@/lib/mock-businesses";
 import { calcOpportunityScore } from "@/lib/mock-businesses";
 import { OpportunityBadge } from "./OpportunityBadge";
+import { generatePitch } from "@/lib/prospector.functions";
+import { toast } from "sonner";
 
 interface Props {
   business: Business | null;
   onClose: () => void;
-}
-
-function generatePitch(b: Business): string {
-  return `Hello ${b.name} team,
-
-I noticed you have ${b.reviewsCount}+ Google reviews and a ${b.rating.toFixed(1)}-star reputation in ${b.city}. That's impressive social proof.
-
-However, ${b.website ? "your current website doesn't fully showcase your reputation" : "your business still doesn't have a professional website"}. Today, most customers search online before making a decision — a modern site builds trust, simplifies communication, and brings in more clients on autopilot.
-
-I build fast, mobile-first websites integrated with WhatsApp, Google Maps, and lead automation. I'd love to send you a free concept showing exactly how your business website could look.
-
-Would you be open to a quick look?`;
 }
 
 export function BusinessModal({ business, onClose }: Props) {
@@ -38,12 +28,32 @@ export function BusinessModal({ business, onClose }: Props) {
   if (!business) return null;
   const score = calcOpportunityScore(business);
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     setGenerating(true);
-    setTimeout(() => {
-      setPitch(generatePitch(business));
+    try {
+      const res = await generatePitch({
+        data: {
+          name: business.name,
+          city: business.city,
+          country: business.country,
+          category: business.category,
+          rating: business.rating,
+          reviewsCount: business.reviewsCount,
+          hasWebsite: !!business.website,
+          website: business.website,
+        },
+      });
+      if (res.error) {
+        toast.error(res.error);
+      } else {
+        setPitch(res.pitch);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to generate pitch.");
+    } finally {
       setGenerating(false);
-    }, 900);
+    }
   };
 
   const handleCopy = () => {
