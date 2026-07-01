@@ -25,7 +25,7 @@ interface Props {
 
 export function SearchFilters({ onSearch, loading }: Props) {
   const [country, setCountry] = useState("Portugal");
-  const [city, setCity] = useState("Lisbon");
+  const [city, setCity] = useState("");
   const [niche, setNiche] = useState("Pet Shop");
 
   return (
@@ -49,12 +49,12 @@ export function SearchFilters({ onSearch, loading }: Props) {
 
         <div className="space-y-1.5">
           <Label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-            <MapPin className="h-3.5 w-3.5" /> City
+            <MapPin className="h-3.5 w-3.5" /> City <span className="text-muted-foreground/60">(optional)</span>
           </Label>
           <Input
             value={city}
             onChange={(e) => setCity(e.target.value)}
-            placeholder="Lisbon, Madrid, Miami…"
+            placeholder="Leave empty to search whole country"
             className="h-11 rounded-xl bg-input/40 border-border"
           />
         </div>
