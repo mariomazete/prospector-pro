@@ -18,7 +18,7 @@ interface PlaceResult {
   rating?: number;
   userRatingCount?: number;
   googleMapsUri?: string;
-  regularOpeningHours?: { weekdayDescriptions?: string[] };
+  regularOpeningHours?: { weekdayDescriptions?: string[]; openNow?: boolean };
   photos?: PlacesPhoto[];
   reviews?: PlacesReview[];
   primaryTypeDisplayName?: { text?: string };
