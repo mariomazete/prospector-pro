@@ -6,9 +6,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   listPipeline, changeStatus, removeFromPipeline,
-  STATUS_LABELS, PIPELINE_STATUSES,
+  STATUS_LABELS, PIPELINE_STATUSES, companyToBusiness,
   type CompanyWithState, type CompanyStatus,
 } from "@/lib/companies-client";
+import { BusinessModal } from "@/components/prospector/BusinessModal";
+import type { Business } from "@/lib/mock-businesses";
 
 export const Route = createFileRoute("/_authenticated/crm")({
   head: () => ({ meta: [{ title: "Pipeline — Prospector AI" }] }),
@@ -31,6 +33,7 @@ const STATUS_COLORS: Record<CompanyStatus, string> = {
 function PipelinePage() {
   const [companies, setCompanies] = useState<CompanyWithState[]>([]);
   const [loading, setLoading] = useState(true);
+  const [active, setActive] = useState<Business | null>(null);
 
   const refresh = async () => {
     try {
@@ -117,7 +120,13 @@ function PipelinePage() {
                 </div>
                 <div className="space-y-2">
                   {columns[status].map((c) => (
-                    <PipelineCard key={c.id} c={c} onStatus={(to) => handleStatus(c, to)} onRemove={() => handleRemove(c)} />
+                    <PipelineCard
+                      key={c.id}
+                      c={c}
+                      onOpen={() => setActive(companyToBusiness(c))}
+                      onStatus={(to) => handleStatus(c, to)}
+                      onRemove={() => handleRemove(c)}
+                    />
                   ))}
                 </div>
               </div>
@@ -125,24 +134,26 @@ function PipelinePage() {
           </div>
         )}
       </main>
+      <BusinessModal business={active} onClose={() => { setActive(null); refresh(); }} />
     </div>
   );
 }
 
-function PipelineCard({ c, onStatus, onRemove }: {
+function PipelineCard({ c, onOpen, onStatus, onRemove }: {
   c: CompanyWithState;
+  onOpen: () => void;
   onStatus: (to: CompanyStatus) => void;
   onRemove: () => void;
 }) {
   const overdue = c.user_state?.next_followup_at && new Date(c.user_state.next_followup_at) < new Date();
   return (
-    <div className="group rounded-xl border border-border bg-background/60 p-3">
+    <div onClick={onOpen} className="group cursor-pointer rounded-xl border border-border bg-background/60 p-3 hover:border-primary/40">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-medium">{c.name}</div>
           <div className="mt-0.5 truncate text-[11px] text-muted-foreground">{c.city}, {c.country}</div>
         </div>
-        <button onClick={onRemove} className="opacity-0 transition group-hover:opacity-100" aria-label="Remove">
+        <button onClick={(e) => { e.stopPropagation(); onRemove(); }} className="opacity-0 transition group-hover:opacity-100" aria-label="Remove">
           <X className="h-3.5 w-3.5 text-muted-foreground hover:text-red-400" />
         </button>
       </div>
@@ -156,6 +167,7 @@ function PipelineCard({ c, onStatus, onRemove }: {
       </div>
       <select
         value={c.user_state?.status ?? "prospecting"}
+        onClick={(e) => e.stopPropagation()}
         onChange={(e) => onStatus(e.target.value as CompanyStatus)}
         className="mt-2 w-full rounded-md border border-border bg-background px-1.5 py-1 text-[11px]"
       >

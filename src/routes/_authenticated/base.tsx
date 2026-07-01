@@ -13,9 +13,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   listCompanies, listFacets, addToPipeline, removeFromPipeline,
-  toggleFavorite, STATUS_LABELS,
+  toggleFavorite, STATUS_LABELS, companyToBusiness,
   type CompanyWithState, type CompanyStatus, type CompanyFilters,
 } from "@/lib/companies-client";
+import { BusinessModal } from "@/components/prospector/BusinessModal";
+import type { Business } from "@/lib/mock-businesses";
 
 export const Route = createFileRoute("/_authenticated/base")({
   head: () => ({ meta: [{ title: "Base de Empresas — Prospector AI" }] }),
@@ -31,6 +33,7 @@ function BasePage() {
   const [page, setPage] = useState(0);
   const [facets, setFacets] = useState<{ countries: string[]; categories: string[] }>({ countries: [], categories: [] });
   const [filters, setFilters] = useState<CompanyFilters>({});
+  const [active, setActive] = useState<Business | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -209,10 +212,14 @@ function BasePage() {
                 </thead>
                 <tbody>
                   {rows.map((c) => (
-                    <tr key={c.id} className="border-t border-border/60 hover:bg-background/40">
+                    <tr
+                      key={c.id}
+                      onClick={() => setActive(companyToBusiness(c))}
+                      className="cursor-pointer border-t border-border/60 hover:bg-background/40"
+                    >
                       <td className="truncate px-3 py-2.5">
                         <div className="flex items-center gap-2">
-                          <button onClick={() => handleFav(c)} className="shrink-0">
+                          <button onClick={(e) => { e.stopPropagation(); handleFav(c); }} className="shrink-0">
                             <Heart className={`h-3.5 w-3.5 ${c.user_state?.favorite ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} />
                           </button>
                           <div className="min-w-0">
@@ -252,7 +259,7 @@ function BasePage() {
                         <Button
                           size="sm"
                           variant={c.user_state?.in_pipeline ? "outline" : "default"}
-                          onClick={() => handlePipeline(c)}
+                          onClick={(e) => { e.stopPropagation(); handlePipeline(c); }}
                           className="h-7 rounded-lg px-2 text-[11px]"
                         >
                           <Bookmark className="mr-1 h-3 w-3" />
@@ -277,6 +284,7 @@ function BasePage() {
           </>
         )}
       </main>
+      <BusinessModal business={active} onClose={() => { setActive(null); load(); }} />
     </div>
   );
 }
