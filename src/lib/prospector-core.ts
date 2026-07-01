@@ -67,6 +67,47 @@ const FIELD_MASK = [
   "places.utcOffsetMinutes",
 ].join(",");
 
+/** Cache TTL for search results (must match DB default). */
+const CACHE_TTL_DAYS = 14;
+
+function cacheKey(country: string, city: string, niche: string) {
+  return `${country.toLowerCase()}::${city.toLowerCase()}::${niche.toLowerCase()}`;
+}
+
+export async function getCachedPlaces(
+  country: string, city: string, niche: string,
+): Promise<PlaceResult[] | null> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await supabaseAdmin
+      .from("prospector_cache")
+      .select("payload, expires_at")
+      .eq("cache_key", cacheKey(country, city, niche))
+      .gt("expires_at", new Date().toISOString())
+      .maybeSingle();
+    return (data?.payload as unknown as PlaceResult[]) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function setCachedPlaces(
+  country: string, city: string, niche: string, places: PlaceResult[],
+): Promise<void> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const expires = new Date(Date.now() + CACHE_TTL_DAYS * 86400_000).toISOString();
+    await supabaseAdmin.from("prospector_cache").upsert({
+      cache_key: cacheKey(country, city, niche),
+      country, city, niche,
+      payload: places as unknown as never,
+      expires_at: expires,
+    }, { onConflict: "cache_key" });
+  } catch {
+    // Cache is best-effort
+  }
+}
+
 /** Text search with pagination (up to 3 pages = 60 results max per query). */
 export async function placesTextSearch(query: string): Promise<PlaceResult[]> {
   const places: PlaceResult[] = [];

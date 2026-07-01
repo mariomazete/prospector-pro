@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { Business } from "./mock-businesses";
-import { placesTextSearch, toBusiness } from "./prospector-core";
+import { placesTextSearch, toBusiness, getCachedPlaces, setCachedPlaces } from "./prospector-core";
 
 const SearchInput = z.object({
   country: z.string().min(1),
@@ -17,7 +17,11 @@ export const searchBusinesses = createServerFn({ method: "POST" })
       ? `${data.niche} in ${city}, ${data.country}`
       : `${data.niche} in ${data.country}`;
     try {
-      const places = await placesTextSearch(query);
+      let places = await getCachedPlaces(data.country, city, data.niche);
+      if (!places) {
+        places = await placesTextSearch(query);
+        if (places.length) await setCachedPlaces(data.country, city, data.niche, places);
+      }
       const results = await Promise.all(
         places.map((p) => toBusiness(p, data.country, city, data.niche)),
       );
