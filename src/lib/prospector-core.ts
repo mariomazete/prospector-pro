@@ -179,6 +179,7 @@ export async function toBusiness(
     reviews,
     aiSummary: buildAiSummary({ website, rating, reviewsCount }),
     utcOffsetMinutes: typeof p.utcOffsetMinutes === "number" ? p.utcOffsetMinutes : null,
+    openNow: typeof p.regularOpeningHours?.openNow === "boolean" ? p.regularOpeningHours.openNow : null,
   };
 }
 
