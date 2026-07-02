@@ -30,6 +30,21 @@ import { useNavigate } from "@tanstack/react-router";
 import { Bookmark, Heart, Calendar, Tag, History } from "lucide-react";
 import { toast } from "sonner";
 
+const AI_CACHE_KEY = "prospector-ai:ai-cache:v1";
+type AICacheEntry = { pitches?: PitchSet | null; analysis?: DeepAnalysis | null };
+function readAICache(): Record<string, AICacheEntry> {
+  if (typeof window === "undefined") return {};
+  try { return JSON.parse(window.sessionStorage.getItem(AI_CACHE_KEY) ?? "{}"); } catch { return {}; }
+}
+function writeAICache(id: string, patch: AICacheEntry) {
+  if (typeof window === "undefined") return;
+  try {
+    const all = readAICache();
+    all[id] = { ...all[id], ...patch };
+    window.sessionStorage.setItem(AI_CACHE_KEY, JSON.stringify(all));
+  } catch { /* ignore */ }
+}
+
 interface Props {
   business: Business | null;
   onClose: () => void;
@@ -62,8 +77,9 @@ export function BusinessModal({ business, onClose }: Props) {
   }, [business]);
 
   useEffect(() => {
-    setPitches(null);
-    setAnalysis(null);
+    const cached = business ? readAICache()[business.id] : undefined;
+    setPitches(cached?.pitches ?? null);
+    setAnalysis(cached?.analysis ?? null);
     setFavorite(false);
     setCompanyId(null);
     setInPipeline(false);
@@ -127,6 +143,7 @@ export function BusinessModal({ business, onClose }: Props) {
       if (res.error || !res.pitches) toast.error(res.error ?? "No pitch");
       else {
         setPitches(res.pitches);
+        writeAICache(business.id, { pitches: res.pitches });
         if (companyId) {
           await addEvent(companyId, "pitch", "AI pitches generated (Formal / Consultive / WhatsApp)").catch(() => {});
           refreshEvents(companyId);
@@ -149,6 +166,7 @@ export function BusinessModal({ business, onClose }: Props) {
       if (res.error || !res.analysis) toast.error(res.error ?? "No analysis");
       else {
         setAnalysis(res.analysis);
+        writeAICache(business.id, { analysis: res.analysis });
         if (companyId) {
           await addEvent(companyId, "discovery", "AI sales strategy generated").catch(() => {});
           refreshEvents(companyId);
@@ -252,7 +270,7 @@ export function BusinessModal({ business, onClose }: Props) {
   };
 
   return (
-    <Dialog open={!!business} onOpenChange={(o) => { if (!o) { onClose(); setPitches(null); setAnalysis(null); } }}>
+    <Dialog open={!!business} onOpenChange={(o) => { if (!o) { onClose(); } }}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border-border bg-card p-0">
         <div className="border-b border-border p-6">
           <DialogHeader>
