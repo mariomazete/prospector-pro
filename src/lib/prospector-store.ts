@@ -34,6 +34,7 @@ const initial: ProspectorState = {
     minRating45: false,
     minReviews50: false,
     highOpportunity: false,
+    hasWhatsapp: false,
   },
   progress: null,
   searched: false,
