@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Sparkles, Download, Zap, Briefcase, LogIn, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
@@ -16,6 +16,7 @@ import {
 import { searchBusinesses } from "@/lib/prospector.functions";
 import { saveSearchHistory, loadSearchHistory, type SearchHistoryRow } from "@/lib/search-history.functions";
 import { prospectorStore, useProspectorStore } from "@/lib/prospector-store";
+import { listPipeline } from "@/lib/companies-client";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
@@ -39,7 +40,20 @@ function Index() {
   const quick = store.quick;
   const [loading, setLoading] = useState(false);
   const [historyToken, setHistoryToken] = useState(0);
+  const [pipelineIds, setPipelineIds] = useState<Set<string>>(new Set());
   const abortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    if (!user) { setPipelineIds(new Set()); return; }
+    let cancelled = false;
+    listPipeline()
+      .then((rows) => {
+        if (cancelled) return;
+        setPipelineIds(new Set(rows.map((r) => r.place_id).filter(Boolean)));
+      })
+      .catch((e) => console.error("[pipeline ids]", e));
+    return () => { cancelled = true; };
+  }, [user, store.activeBusiness]);
 
   const setResults = (r: Business[]) => prospectorStore.set({ results: r });
   const setSearched = (v: boolean) => prospectorStore.set({ searched: v });
@@ -220,13 +234,14 @@ function Index() {
 
   const filtered = useMemo(() => {
     return results.filter((b) => {
+      if (pipelineIds.has(b.id)) return false;
       if (quick.noWebsite && b.website) return false;
       if (quick.minRating45 && b.rating < 4.5) return false;
       if (quick.minReviews50 && b.reviewsCount < 50) return false;
       if (quick.highOpportunity && calcOpportunityScore(b) <= 80) return false;
       return true;
     });
-  }, [results, quick]);
+  }, [results, quick, pipelineIds]);
 
   const handleExport = () => {
     const rows = [
