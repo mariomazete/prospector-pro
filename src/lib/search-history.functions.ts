@@ -32,26 +32,16 @@ export const saveSearchHistory = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ id?: string; error?: string }> => {
     const city = data.city?.trim() || null;
     // Manual upsert on (user_id, niche, country, coalesce(city,'')) — unique index exists.
-    const { data: existing } = await context.supabase
+    const baseQuery = context.supabase
       .from("search_history")
       .select("id")
       .eq("user_id", context.userId)
       .eq("niche", data.niche)
-      .eq("country", data.country)
-      .is("city", city === null ? null : (undefined as never));
-    // The .is() trick above only handles null; do a second query for non-null match.
-    let rowId = existing?.[0]?.id ?? null;
-    if (!rowId && city !== null) {
-      const { data: match } = await context.supabase
-        .from("search_history")
-        .select("id")
-        .eq("user_id", context.userId)
-        .eq("niche", data.niche)
-        .eq("country", data.country)
-        .eq("city", city)
-        .maybeSingle();
-      rowId = match?.id ?? null;
-    }
+      .eq("country", data.country);
+    const { data: match } = city === null
+      ? await baseQuery.is("city", null).maybeSingle()
+      : await baseQuery.eq("city", city).maybeSingle();
+    const rowId = match?.id ?? null;
     if (rowId) {
       const { error } = await context.supabase
         .from("search_history")

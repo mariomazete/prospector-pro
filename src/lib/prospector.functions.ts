@@ -2,7 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { calcOpportunityScore, type Business } from "./mock-businesses";
 import { placesTextSearch, toBusiness, getCachedPlaces, setCachedPlaces } from "./prospector-core";
-import { upsertCompaniesFromBusinesses } from "./companies-upsert.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -106,6 +105,7 @@ export const searchBusinesses = createServerFn({ method: "POST" })
         places.map((p) => toBusiness(p, data.country, city, data.niche)),
       );
       // Persist every result before responding so the Base is immediately durable.
+      const { upsertCompaniesFromBusinesses } = await import("./companies-upsert.server");
       const saved = await upsertCompaniesFromBusinesses(results, {
         country: data.country, city, niche: data.niche,
       });
