@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Database, Json } from "@/integrations/supabase/types";
 import type { Business } from "@/lib/mock-businesses";
 import type { DeepAnalysis, PitchSet } from "@/lib/prospector.functions";
+import { whatsappLink } from "@/lib/whatsapp";
 
 export type CompanyRow = Database["public"]["Tables"]["companies"]["Row"];
 export type UserCompanyState = Database["public"]["Tables"]["user_company_state"]["Row"];
@@ -41,6 +42,7 @@ export interface CompanyFilters {
   favoritesOnly?: boolean;
   neverProspectedOnly?: boolean;
   inPipelineOnly?: boolean;
+  whatsappOnly?: boolean;
   status?: CompanyStatus | null;
   limit?: number;
   offset?: number;
@@ -85,6 +87,7 @@ export async function listCompanies(f: CompanyFilters = {}): Promise<{ rows: Com
   if (f.favoritesOnly) rows = rows.filter((r) => r.user_state?.favorite);
   if (f.neverProspectedOnly) rows = rows.filter((r) => !r.user_state || r.user_state.status === "never_prospected");
   if (f.inPipelineOnly) rows = rows.filter((r) => r.user_state?.in_pipeline);
+  if (f.whatsappOnly) rows = rows.filter((r) => !!whatsappLink(r.phone));
   if (f.status) rows = rows.filter((r) => (r.user_state?.status ?? "never_prospected") === f.status);
 
   return { rows, total: count ?? rows.length };
