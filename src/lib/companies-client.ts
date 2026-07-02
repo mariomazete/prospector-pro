@@ -247,13 +247,13 @@ export function parseDeepAnalysis(value: Json | null): DeepAnalysis | null {
   const objections = attackPlan.objections;
   if (!isRecord(bestChannel) || !Array.isArray(objections)) return null;
 
-  const parsedObjections = objections
-    .filter(isRecord)
-    .map((item) => ({
-      question: typeof item.question === "string" ? item.question : "",
-      answer: typeof item.answer === "string" ? item.answer : "",
-    }))
-    .filter((item) => item.question && item.answer);
+  const parsedObjections = objections.reduce<Array<{ question: string; answer: string }>>((acc, item: unknown) => {
+    if (!isRecord(item)) return acc;
+    const question = typeof item.question === "string" ? item.question : "";
+    const answer = typeof item.answer === "string" ? item.answer : "";
+    if (question && answer) acc.push({ question, answer });
+    return acc;
+  }, []);
 
   return {
     scoreReasons: {
