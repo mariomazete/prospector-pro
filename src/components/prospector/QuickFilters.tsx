@@ -6,6 +6,7 @@ export interface QuickFilterState {
   minRating45: boolean;
   minReviews50: boolean;
   highOpportunity: boolean;
+  hasWhatsapp: boolean;
 }
 
 interface Props {
@@ -20,6 +21,7 @@ const items: { key: keyof QuickFilterState; label: string }[] = [
   { key: "minRating45", label: "Minimum rating 4.5" },
   { key: "minReviews50", label: "Minimum 50 reviews" },
   { key: "highOpportunity", label: "Only high opportunity (>80)" },
+  { key: "hasWhatsapp", label: "Only with WhatsApp" },
 ];
 
 export function QuickFilters({ value, onChange, total, filtered }: Props) {
