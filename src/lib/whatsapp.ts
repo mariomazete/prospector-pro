@@ -10,11 +10,9 @@ export function whatsappLink(phone: string | null | undefined): string | null {
     const p = parsePhoneNumberFromString(phone);
     if (!p || !p.isValid()) return null;
     const type = p.getType();
-    // Only mobile / fixed-or-mobile can be WhatsApp
-    if (type === "MOBILE" || type === "FIXED_LINE_OR_MOBILE" || type === undefined) {
-      return `https://wa.me/${p.number.replace(/\D/g, "")}`;
-    }
-    return null;
+    // Strict: only real mobiles. Undefined/fixed lines are NOT considered WhatsApp.
+    if (type !== "MOBILE" && type !== "FIXED_LINE_OR_MOBILE") return null;
+    return `https://wa.me/${p.number.replace(/\D/g, "")}`;
   } catch {
     return null;
   }
