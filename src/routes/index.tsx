@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { Sparkles, Download, Zap, Briefcase, LogIn, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
@@ -38,7 +38,6 @@ function Index() {
   const progress = store.progress;
   const quick = store.quick;
   const [loading, setLoading] = useState(false);
-  const [active, setActive] = useState<Business | null>(null);
   const [historyToken, setHistoryToken] = useState(0);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -49,7 +48,10 @@ function Index() {
       progress: typeof v === "function" ? (v as (p: typeof progress) => typeof progress)(s.progress) : v,
     }));
   };
-  const setQuick = (q: typeof quick) => prospectorStore.set({ quick: q });
+  const setQuick = (q: typeof quick) => prospectorStore.set({ quick: q, resultPage: 1 });
+  const setResultPage = useCallback((page: number) => {
+    prospectorStore.set({ resultPage: page });
+  }, []);
 
   const persistHistory = async (v: SearchValues, list: Business[]) => {
     if (!user || list.length === 0) return;
@@ -70,7 +72,7 @@ function Index() {
   const handleSearch = async (v: SearchValues) => {
     setLoading(true);
     setSearched(true);
-    prospectorStore.set({ progress: null, filters: v });
+    prospectorStore.set({ progress: null, filters: v, activeBusiness: null, resultPage: 1 });
     setResults([]);
     const city = v.city.trim();
 
@@ -193,6 +195,8 @@ function Index() {
       progress: null,
       filters: { country: row.country, city: row.city ?? "", niche: row.niche },
       historyId: row.id,
+      activeBusiness: null,
+      resultPage: 1,
     });
     try {
       const res = await loadSearchHistory({ data: { id: row.id } });
@@ -310,7 +314,7 @@ function Index() {
 
         {/* Filters */}
         <div className="space-y-3">
-          <SearchFilters onSearch={handleSearch} loading={loading} />
+          <SearchFilters onSearch={handleSearch} loading={loading} initialValues={store.filters} />
           {user && (
             <RecentSearches
               onOpen={openHistory}
@@ -336,12 +340,21 @@ function Index() {
           {!searched ? (
             <EmptyState />
           ) : (
-            <ResultsTable data={filtered} loading={loading} onView={setActive} />
+            <ResultsTable
+              data={filtered}
+              loading={loading}
+              onView={(business) => prospectorStore.set({ activeBusiness: business })}
+              page={store.resultPage}
+              onPageChange={setResultPage}
+            />
           )}
         </div>
       </main>
 
-      <BusinessModal business={active} onClose={() => setActive(null)} />
+      <BusinessModal
+        business={store.activeBusiness}
+        onClose={() => prospectorStore.set({ activeBusiness: null })}
+      />
     </div>
   );
 }

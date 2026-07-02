@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Search, MapPin, Globe, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,12 +21,20 @@ export interface SearchValues {
 interface Props {
   onSearch: (v: SearchValues) => void;
   loading: boolean;
+  initialValues?: SearchValues | null;
 }
 
-export function SearchFilters({ onSearch, loading }: Props) {
-  const [country, setCountry] = useState("Portugal");
-  const [city, setCity] = useState("");
-  const [niche, setNiche] = useState("Pet Shop");
+export function SearchFilters({ onSearch, loading, initialValues }: Props) {
+  const [country, setCountry] = useState(initialValues?.country ?? "Portugal");
+  const [city, setCity] = useState(initialValues?.city ?? "");
+  const [niche, setNiche] = useState(initialValues?.niche ?? "Pet Shop");
+
+  useEffect(() => {
+    if (!initialValues) return;
+    setCountry(initialValues.country);
+    setCity(initialValues.city);
+    setNiche(initialValues.niche);
+  }, [initialValues]);
 
   return (
     <div className="rounded-2xl border border-border bg-card p-5 shadow-[0_1px_0_rgba(255,255,255,0.04)_inset]">
