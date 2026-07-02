@@ -74,10 +74,12 @@ export const Route = createFileRoute("/api/public/prospector-stream")({
                   );
                   found += businesses.length;
                   processed++;
-                  // Auto-save to global companies base (fire-and-forget)
-                  upsertCompaniesFromBusinesses(businesses, {
+                  // Auto-save to global companies base before emitting this city as done.
+                  // This keeps the Base durable even if the user navigates away right after a scan.
+                  const saved = await upsertCompaniesFromBusinesses(businesses, {
                     country, city, niche,
-                  }).catch(() => {});
+                  });
+                  if (saved.error) console.error("[prospector-stream] base save error", saved.error);
                   send({
                     type: "city_done", city, index: idx,
                     businesses, processed, totalCities: cities.length,

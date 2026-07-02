@@ -10,8 +10,8 @@ import { calcOpportunityScore } from "./mock-businesses";
 export async function upsertCompaniesFromBusinesses(
   businesses: Business[],
   origin: { country: string; city?: string | null; niche: string; userId?: string | null },
-): Promise<void> {
-  if (businesses.length === 0) return;
+): Promise<{ saved: number; error?: string }> {
+  if (businesses.length === 0) return { saved: 0 };
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -65,7 +65,7 @@ export async function upsertCompaniesFromBusinesses(
       .select("id, place_id");
     if (error) {
       console.error("[companies] upsert error", error);
-      return;
+      return { saved: 0, error: error.message };
     }
 
     // Log search appearances
@@ -77,9 +77,12 @@ export async function upsertCompaniesFromBusinesses(
         country: origin.country,
         city: origin.city ?? null,
       }));
-      await supabaseAdmin.from("company_searches").insert(searchRows);
+      const { error: searchError } = await supabaseAdmin.from("company_searches").insert(searchRows);
+      if (searchError) console.error("[companies] search log error", searchError);
     }
+    return { saved: upserted?.length ?? 0 };
   } catch (err) {
     console.error("[companies] upsert failed", err);
+    return { saved: 0, error: err instanceof Error ? err.message : "Failed to save companies" };
   }
 }
