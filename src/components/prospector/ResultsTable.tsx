@@ -12,14 +12,14 @@ interface Props {
   data: Business[];
   loading: boolean;
   onView: (b: Business) => void;
+  page: number;
+  onPageChange: (page: number) => void;
 }
 
-export function ResultsTable({ data, loading, onView }: Props) {
-  const [page, setPage] = useState(1);
+export function ResultsTable({ data, loading, onView, page, onPageChange }: Props) {
   const totalPages = Math.max(1, Math.ceil(data.length / PAGE_SIZE));
 
-  useEffect(() => { setPage(1); }, [data]);
-  useEffect(() => { if (page > totalPages) setPage(totalPages); }, [page, totalPages]);
+  useEffect(() => { if (page > totalPages) onPageChange(totalPages); }, [page, totalPages, onPageChange]);
 
   const pageData = useMemo(
     () => data.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
@@ -164,7 +164,7 @@ export function ResultsTable({ data, loading, onView }: Props) {
               variant="ghost"
               size="sm"
               className="h-8 rounded-lg text-xs"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              onClick={() => onPageChange(Math.max(1, page - 1))}
               disabled={page === 1}
             >
               <ChevronLeft className="h-3.5 w-3.5" /> Prev
@@ -176,7 +176,7 @@ export function ResultsTable({ data, loading, onView }: Props) {
               variant="ghost"
               size="sm"
               className="h-8 rounded-lg text-xs"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              onClick={() => onPageChange(Math.min(totalPages, page + 1))}
               disabled={page === totalPages}
             >
               Next <ChevronRight className="h-3.5 w-3.5" />
