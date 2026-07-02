@@ -1,5 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
+import type { Database, Json } from "@/integrations/supabase/types";
+import type { Business } from "@/lib/mock-businesses";
+import type { DeepAnalysis, PitchSet } from "@/lib/prospector.functions";
 
 export type CompanyRow = Database["public"]["Tables"]["companies"]["Row"];
 export type UserCompanyState = Database["public"]["Tables"]["user_company_state"]["Row"];
@@ -218,8 +220,96 @@ export async function findCompanyByPlaceId(placeId: string): Promise<CompanyWith
   return { ...row, user_state: row.user_state && row.user_state.length > 0 ? row.user_state[0] : null };
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === "string");
+}
+
+export function parsePitchSet(value: Json | null): PitchSet | null {
+  if (!isRecord(value)) return null;
+  const formal = value.formal;
+  const consultive = value.consultive;
+  const whatsapp = value.whatsapp;
+  if (typeof formal !== "string" || typeof consultive !== "string" || typeof whatsapp !== "string") return null;
+  return { formal, consultive, whatsapp };
+}
+
+export function parseDeepAnalysis(value: Json | null): DeepAnalysis | null {
+  if (!isRecord(value)) return null;
+  const scoreReasons = value.scoreReasons;
+  const attackPlan = value.attackPlan;
+  const reviewIntel = value.reviewIntel;
+  if (!isRecord(scoreReasons) || !isRecord(attackPlan) || !isRecord(reviewIntel)) return null;
+  const bestChannel = attackPlan.bestChannel;
+  const objections = attackPlan.objections;
+  if (!isRecord(bestChannel) || !Array.isArray(objections)) return null;
+
+  const parsedObjections = objections.reduce<Array<{ question: string; answer: string }>>((acc, item: unknown) => {
+    if (!isRecord(item)) return acc;
+    const question = typeof item.question === "string" ? item.question : "";
+    const answer = typeof item.answer === "string" ? item.answer : "";
+    if (question && answer) acc.push({ question, answer });
+    return acc;
+  }, []);
+
+  return {
+    scoreReasons: {
+      positives: isStringArray(scoreReasons.positives) ? scoreReasons.positives : [],
+      negatives: isStringArray(scoreReasons.negatives) ? scoreReasons.negatives : [],
+      warnings: isStringArray(scoreReasons.warnings) ? scoreReasons.warnings : [],
+    },
+    attackPlan: {
+      conversionChance: typeof attackPlan.conversionChance === "number" ? attackPlan.conversionChance : 0,
+      bestServices: isStringArray(attackPlan.bestServices) ? attackPlan.bestServices : [],
+      bestApproach: typeof attackPlan.bestApproach === "string" ? attackPlan.bestApproach : "",
+      bestHours: isStringArray(attackPlan.bestHours) ? attackPlan.bestHours : [],
+      bestChannel: {
+        name: typeof bestChannel.name === "string" ? bestChannel.name : "",
+        reason: typeof bestChannel.reason === "string" ? bestChannel.reason : "",
+        stars: typeof bestChannel.stars === "number" ? bestChannel.stars : 0,
+      },
+      objections: parsedObjections,
+    },
+    reviewIntel: {
+      praised: isStringArray(reviewIntel.praised) ? reviewIntel.praised : [],
+      complained: isStringArray(reviewIntel.complained) ? reviewIntel.complained : [],
+    },
+    businessInsights: isStringArray(value.businessInsights) ? value.businessInsights : [],
+    recommendedServices: isStringArray(value.recommendedServices) ? value.recommendedServices : [],
+    summary: typeof value.summary === "string" ? value.summary : "",
+  };
+}
+
+export function companyAiFromRow(c: Pick<CompanyRow, "attack_plan" | "pitches">): {
+  analysis: DeepAnalysis | null;
+  pitches: PitchSet | null;
+} {
+  return {
+    analysis: parseDeepAnalysis(c.attack_plan),
+    pitches: parsePitchSet(c.pitches),
+  };
+}
+
+export async function updateCompanyAi(
+  companyId: string,
+  patch: { analysis?: DeepAnalysis | null; pitches?: PitchSet | null },
+): Promise<void> {
+  const update: Database["public"]["Tables"]["companies"]["Update"] = {};
+  if ("analysis" in patch) {
+    update.attack_plan = patch.analysis ? (patch.analysis as unknown as Json) : null;
+    update.conversion_chance = patch.analysis?.attackPlan.conversionChance ?? null;
+  }
+  if ("pitches" in patch) update.pitches = patch.pitches ? (patch.pitches as unknown as Json) : null;
+  if (Object.keys(update).length === 0) return;
+
+  const { error } = await supabase.from("companies").update(update).eq("id", companyId);
+  if (error) throw error;
+}
+
 /** Convert a persisted company row into the `Business` shape the modal expects. */
-import type { Business } from "@/lib/mock-businesses";
 export function companyToBusiness(c: CompanyRow): Business {
   const photos = Array.isArray(c.photos) ? (c.photos as unknown as string[]) : [];
   const reviews = Array.isArray(c.reviews) ? (c.reviews as unknown as Business["reviews"]) : [];
