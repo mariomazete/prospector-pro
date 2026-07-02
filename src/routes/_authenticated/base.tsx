@@ -166,13 +166,15 @@ function BasePage() {
                 filters.favoritesOnly ? "fav"
                 : filters.neverProspectedOnly ? "never"
                 : filters.inPipelineOnly ? "pipeline"
+                : filters.whatsappOnly ? "whatsapp"
                 : filters.status ?? "all"
               }
               onValueChange={(v) => update({
                 favoritesOnly: v === "fav",
                 neverProspectedOnly: v === "never",
                 inPipelineOnly: v === "pipeline",
-                status: v === "all" || v === "fav" || v === "never" || v === "pipeline" ? null : (v as CompanyStatus),
+                whatsappOnly: v === "whatsapp",
+                status: v === "all" || v === "fav" || v === "never" || v === "pipeline" || v === "whatsapp" ? null : (v as CompanyStatus),
               })}
             >
               <SelectTrigger className="h-9"><SelectValue placeholder="Status" /></SelectTrigger>
@@ -181,6 +183,7 @@ function BasePage() {
                 <SelectItem value="fav">⭐ Favoritos</SelectItem>
                 <SelectItem value="never">Nunca prospectadas</SelectItem>
                 <SelectItem value="pipeline">No Pipeline</SelectItem>
+                <SelectItem value="whatsapp">📱 Só WhatsApp</SelectItem>
                 {(Object.keys(STATUS_LABELS) as CompanyStatus[]).map((s) => (
                   <SelectItem key={s} value={s}>{STATUS_LABELS[s]}</SelectItem>
                 ))}
