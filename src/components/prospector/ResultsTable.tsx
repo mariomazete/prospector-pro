@@ -5,15 +5,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { Business } from "@/lib/mock-businesses";
 import { calcOpportunityScore } from "@/lib/mock-businesses";
 import { OpportunityBadge } from "./OpportunityBadge";
+import { whatsappLink } from "@/lib/whatsapp";
 
 const PAGE_SIZE = 50;
 
-function waLink(phone: string | null | undefined): string | null {
-  if (!phone) return null;
-  const digits = phone.replace(/\D/g, "");
-  if (digits.length < 8) return null;
-  return `https://wa.me/${digits}`;
-}
+const waLink = whatsappLink;
 
 interface Props {
   data: Business[];
