@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { whatsappLink } from "@/lib/whatsapp";
 import {
   listCompanies, listFacets, addToPipeline, removeFromPipeline,
   toggleFavorite, STATUS_LABELS, companyToBusiness,
@@ -251,11 +252,10 @@ function BasePage() {
                       <td className="truncate px-3 py-2.5 text-muted-foreground">
                         <div className="flex gap-2">
                           {c.phone && (() => {
-                            const digits = c.phone.replace(/\D/g, "");
-                            const isWa = digits.length >= 8;
-                            return isWa ? (
+                            const wa = whatsappLink(c.phone);
+                            return wa ? (
                               <a
-                                href={`https://wa.me/${digits}`}
+                                href={wa}
                                 target="_blank"
                                 rel="noreferrer"
                                 title="WhatsApp"
@@ -264,7 +264,7 @@ function BasePage() {
                                 <Phone className="h-3.5 w-3.5 text-emerald-400 hover:text-emerald-300" />
                               </a>
                             ) : (
-                              <a href={`tel:${c.phone}`} onClick={(e) => e.stopPropagation()}>
+                              <a href={`tel:${c.phone}`} title="Ligar" onClick={(e) => e.stopPropagation()}>
                                 <Phone className="h-3.5 w-3.5 hover:text-primary" />
                               </a>
                             );
