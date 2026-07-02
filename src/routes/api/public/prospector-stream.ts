@@ -3,7 +3,6 @@ import { z } from "zod";
 import { citiesForCountry } from "@/lib/cities-db";
 import { placesTextSearch, toBusiness, getCachedPlaces, setCachedPlaces } from "@/lib/prospector-core";
 import type { Business } from "@/lib/mock-businesses";
-import { upsertCompaniesFromBusinesses } from "@/lib/companies-upsert.server";
 
 const InputSchema = z.object({
   country: z.string().min(1),
@@ -76,6 +75,7 @@ export const Route = createFileRoute("/api/public/prospector-stream")({
                   processed++;
                   // Auto-save to global companies base before emitting this city as done.
                   // This keeps the Base durable even if the user navigates away right after a scan.
+                  const { upsertCompaniesFromBusinesses } = await import("@/lib/companies-upsert.server");
                   const saved = await upsertCompaniesFromBusinesses(businesses, {
                     country, city, niche,
                   });
