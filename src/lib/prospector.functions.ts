@@ -101,8 +101,11 @@ export const searchBusinesses = createServerFn({ method: "POST" })
         places = await placesTextSearch(query);
         if (places.length) await setCachedPlaces(data.country, city, data.niche, places);
       }
+      const uniquePlaces = Array.from(
+        new Map(places.filter((p) => p.id).map((p) => [p.id, p])).values(),
+      );
       const results = await Promise.all(
-        places.map((p) => toBusiness(p, data.country, city, data.niche)),
+        uniquePlaces.map((p) => toBusiness(p, data.country, city, data.niche)),
       );
       // Persist every result before responding so the Base is immediately durable.
       const { upsertCompaniesFromBusinesses } = await import("./companies-upsert.server");

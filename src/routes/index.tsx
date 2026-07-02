@@ -59,7 +59,7 @@ function Index() {
           niche: v.niche,
           country: v.country,
           city: v.city.trim() || null,
-          placeIds: list.map((b) => b.id),
+          placeIds: Array.from(new Set(list.map((b) => b.id).filter(Boolean))),
           filters: {},
         },
       });

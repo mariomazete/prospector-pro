@@ -11,11 +11,14 @@ export async function upsertCompaniesFromBusinesses(
   businesses: Business[],
   origin: { country: string; city?: string | null; niche: string; userId?: string | null },
 ): Promise<{ saved: number; error?: string }> {
-  if (businesses.length === 0) return { saved: 0 };
+  const uniqueBusinesses = Array.from(
+    new Map(businesses.filter((b) => b.id).map((b) => [b.id, b])).values(),
+  );
+  if (uniqueBusinesses.length === 0) return { saved: 0 };
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const rows = businesses.map((b) => {
+    const rows = uniqueBusinesses.map((b) => {
       const score = calcOpportunityScore(b);
       return {
         place_id: b.id,
