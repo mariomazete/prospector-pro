@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from "react";
-import { Star, ExternalLink, Eye, Image as ImageIcon, Phone, ChevronLeft, ChevronRight } from "lucide-react";
+import { Star, ExternalLink, Eye, Image as ImageIcon, Phone, ChevronLeft, ChevronRight, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Business } from "@/lib/mock-businesses";
@@ -7,6 +7,13 @@ import { calcOpportunityScore } from "@/lib/mock-businesses";
 import { OpportunityBadge } from "./OpportunityBadge";
 
 const PAGE_SIZE = 50;
+
+function waLink(phone: string | null | undefined): string | null {
+  if (!phone) return null;
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length < 8) return null;
+  return `https://wa.me/${digits}`;
+}
 
 interface Props {
   data: Business[];
@@ -108,7 +115,20 @@ export function ResultsTable({ data, loading, onView, page, onPageChange }: Prop
                   </td>
                   <td className="px-2 py-3.5">
                     <div className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
-                      <Phone className="h-3 w-3 shrink-0" />
+                      {waLink(b.phone) ? (
+                        <a
+                          href={waLink(b.phone)!}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          title="Open in WhatsApp"
+                          className="grid h-5 w-5 shrink-0 place-items-center rounded-md bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25"
+                        >
+                          <MessageCircle className="h-3 w-3" />
+                        </a>
+                      ) : (
+                        <Phone className="h-3 w-3 shrink-0" />
+                      )}
                       <span className="truncate tabular-nums">{b.phone || "—"}</span>
                     </div>
                   </td>
