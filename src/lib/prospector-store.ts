@@ -96,8 +96,8 @@ export const prospectorStore = {
     emit();
   },
   subscribe: (l: () => void) => {
-    hydrate();
     listeners.add(l);
+    hydrate();
     return () => { listeners.delete(l); };
   },
 };
