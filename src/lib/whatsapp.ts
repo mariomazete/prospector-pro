@@ -1,8 +1,10 @@
-import { parsePhoneNumberFromString } from "libphonenumber-js";
+import { parsePhoneNumberFromString } from "libphonenumber-js/max";
 
 /**
- * Returns a wa.me URL when the phone is a mobile number (WhatsApp-capable),
- * otherwise null. Uses libphonenumber-js to detect line type.
+ * Returns a wa.me URL only when the phone is classified as a real mobile
+ * number. The `/max` metadata build is required because the default
+ * libphonenumber-js metadata often cannot detect line type for countries like
+ * Portugal (`+351 928...` must be MOBILE, `+351 291...` must be FIXED_LINE).
  */
 export function whatsappLink(phone: string | null | undefined): string | null {
   if (!phone) return null;
@@ -10,8 +12,8 @@ export function whatsappLink(phone: string | null | undefined): string | null {
     const p = parsePhoneNumberFromString(phone);
     if (!p || !p.isValid()) return null;
     const type = p.getType();
-    // Strict: only real mobiles. Undefined/fixed lines are NOT considered WhatsApp.
-    if (type !== "MOBILE" && type !== "FIXED_LINE_OR_MOBILE") return null;
+    // Strict: only confirmed mobiles get the green WhatsApp state.
+    if (type !== "MOBILE") return null;
     return `https://wa.me/${p.number.replace(/\D/g, "")}`;
   } catch {
     return null;
