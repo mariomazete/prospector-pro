@@ -128,6 +128,15 @@ export function BusinessModal({ business, onClose }: Props) {
     try { setEvents(await listEvents(id)); } catch {}
   };
 
+  const ensurePersistedCompanyId = async (): Promise<string | null> => {
+    if (companyId) return companyId;
+    if (!business || !user) return null;
+    const res = await ensureCompany({ data: business });
+    if (!res.id) throw new Error(res.error ?? "Failed to save company.");
+    setCompanyId(res.id);
+    return res.id;
+  };
+
   if (!business) return null;
   const score = calcOpportunityScore(business);
   const localTime =
@@ -154,10 +163,11 @@ export function BusinessModal({ business, onClose }: Props) {
       else {
         setPitches(res.pitches);
         writeAICache(business.id, { pitches: res.pitches });
-        if (companyId) {
-          await updateCompanyAi(companyId, { pitches: res.pitches }).catch(() => {});
-          await addEvent(companyId, "pitch", "AI pitches generated (Formal / Consultive / WhatsApp)").catch(() => {});
-          refreshEvents(companyId);
+        const persistedCompanyId = await ensurePersistedCompanyId();
+        if (persistedCompanyId) {
+          await updateCompanyAi(persistedCompanyId, { pitches: res.pitches });
+          await addEvent(persistedCompanyId, "pitch", "AI pitches generated (Formal / Consultive / WhatsApp)").catch(() => {});
+          refreshEvents(persistedCompanyId);
         }
       }
     } catch (err) {
@@ -178,10 +188,11 @@ export function BusinessModal({ business, onClose }: Props) {
       else {
         setAnalysis(res.analysis);
         writeAICache(business.id, { analysis: res.analysis });
-        if (companyId) {
-          await updateCompanyAi(companyId, { analysis: res.analysis }).catch(() => {});
-          await addEvent(companyId, "discovery", "AI sales strategy generated").catch(() => {});
-          refreshEvents(companyId);
+        const persistedCompanyId = await ensurePersistedCompanyId();
+        if (persistedCompanyId) {
+          await updateCompanyAi(persistedCompanyId, { analysis: res.analysis });
+          await addEvent(persistedCompanyId, "discovery", "AI sales strategy generated").catch(() => {});
+          refreshEvents(persistedCompanyId);
         }
       }
     } catch (err) {
