@@ -250,7 +250,25 @@ function BasePage() {
                       </td>
                       <td className="truncate px-3 py-2.5 text-muted-foreground">
                         <div className="flex gap-2">
-                          {c.phone && <a href={`tel:${c.phone}`} onClick={(e) => e.stopPropagation()}><Phone className="h-3.5 w-3.5 hover:text-primary" /></a>}
+                          {c.phone && (() => {
+                            const digits = c.phone.replace(/\D/g, "");
+                            const isWa = digits.length >= 8;
+                            return isWa ? (
+                              <a
+                                href={`https://wa.me/${digits}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                title="WhatsApp"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <Phone className="h-3.5 w-3.5 text-emerald-400 hover:text-emerald-300" />
+                              </a>
+                            ) : (
+                              <a href={`tel:${c.phone}`} onClick={(e) => e.stopPropagation()}>
+                                <Phone className="h-3.5 w-3.5 hover:text-primary" />
+                              </a>
+                            );
+                          })()}
                           {c.website && <a href={c.website} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}><Globe className="h-3.5 w-3.5 hover:text-primary" /></a>}
                           {c.maps_url && <a href={c.maps_url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}><MapPin className="h-3.5 w-3.5 hover:text-primary" /></a>}
                         </div>
