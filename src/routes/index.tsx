@@ -17,6 +17,7 @@ import { searchBusinesses } from "@/lib/prospector.functions";
 import { saveSearchHistory, loadSearchHistory, type SearchHistoryRow } from "@/lib/search-history.functions";
 import { prospectorStore, useProspectorStore } from "@/lib/prospector-store";
 import { listPipeline } from "@/lib/companies-client";
+import { whatsappLink } from "@/lib/whatsapp";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
