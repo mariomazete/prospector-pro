@@ -340,7 +340,6 @@ function Index() {
           {!searched ? (
             <EmptyState />
           ) : (
-            <ResultsTable data={filtered} loading={loading} onView={setActive} />
             <ResultsTable
               data={filtered}
               loading={loading}
