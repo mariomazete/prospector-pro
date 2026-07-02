@@ -19,6 +19,7 @@ import { generatePitch, analyzeBusiness, ensureCompany, type DeepAnalysis, type 
 import {
   addToPipeline, findCompanyByPlaceId, toggleFavorite,
   changeStatus, updateStateMeta, listEvents, addEvent,
+  updateCompanyAi, companyAiFromRow,
   STATUS_LABELS, type CompanyStatus, type CompanyEvent, type UserCompanyState,
 } from "@/lib/companies-client";
 import { Textarea } from "@/components/ui/textarea";
@@ -99,6 +100,15 @@ export function BusinessModal({ business, onClose }: Props) {
           if (!c) return;
           setCompanyId(c.id);
           applyState(c.user_state ?? null);
+          const persistedAi = companyAiFromRow(c);
+          if (persistedAi.pitches) {
+            setPitches(persistedAi.pitches);
+            writeAICache(business.id, { pitches: persistedAi.pitches });
+          }
+          if (persistedAi.analysis) {
+            setAnalysis(persistedAi.analysis);
+            writeAICache(business.id, { analysis: persistedAi.analysis });
+          }
           try { setEvents(await listEvents(c.id)); } catch {}
         } catch {}
       })();
@@ -145,6 +155,7 @@ export function BusinessModal({ business, onClose }: Props) {
         setPitches(res.pitches);
         writeAICache(business.id, { pitches: res.pitches });
         if (companyId) {
+          await updateCompanyAi(companyId, { pitches: res.pitches }).catch(() => {});
           await addEvent(companyId, "pitch", "AI pitches generated (Formal / Consultive / WhatsApp)").catch(() => {});
           refreshEvents(companyId);
         }
@@ -168,6 +179,7 @@ export function BusinessModal({ business, onClose }: Props) {
         setAnalysis(res.analysis);
         writeAICache(business.id, { analysis: res.analysis });
         if (companyId) {
+          await updateCompanyAi(companyId, { analysis: res.analysis }).catch(() => {});
           await addEvent(companyId, "discovery", "AI sales strategy generated").catch(() => {});
           refreshEvents(companyId);
         }
