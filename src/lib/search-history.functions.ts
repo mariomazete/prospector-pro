@@ -106,12 +106,29 @@ export const loadSearchHistory = createServerFn({ method: "POST" })
     const placeIds = (row.place_ids ?? []) as string[];
     if (placeIds.length === 0) return { businesses: [], row: row as unknown as SearchHistoryRow };
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: companies } = await supabaseAdmin
-      .from("companies")
-      .select("*")
-      .in("place_id", placeIds);
-    const businesses: Business[] = (companies ?? []).map((c) => {
+    const companies: Database["public"]["Tables"]["companies"]["Row"][] = [];
+    const chunkSize = 100;
+    for (let i = 0; i < placeIds.length; i += chunkSize) {
+      const chunk = placeIds.slice(i, i + chunkSize);
+      const { data: chunkRows, error: companiesError } = await context.supabase
+        .from("companies")
+        .select("*")
+        .in("place_id", chunk);
+      if (companiesError) {
+        console.error("[search-history] load companies error", companiesError);
+        return {
+          businesses: [],
+          row: row as unknown as SearchHistoryRow,
+          error: "Failed to load companies from Base.",
+        };
+      }
+      companies.push(...((chunkRows ?? []) as Database["public"]["Tables"]["companies"]["Row"][]));
+    }
+
+    const order = new Map(placeIds.map((placeId, index) => [placeId, index]));
+    companies.sort((a, b) => (order.get(a.place_id) ?? 0) - (order.get(b.place_id) ?? 0));
+
+    const businesses: Business[] = companies.map((c) => {
       const photos = Array.isArray(c.photos) ? (c.photos as unknown as string[]) : [];
       const reviews = Array.isArray(c.reviews) ? (c.reviews as unknown as Business["reviews"]) : [];
       return {
