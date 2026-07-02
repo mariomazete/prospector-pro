@@ -239,6 +239,7 @@ function Index() {
       if (quick.minRating45 && b.rating < 4.5) return false;
       if (quick.minReviews50 && b.reviewsCount < 50) return false;
       if (quick.highOpportunity && calcOpportunityScore(b) <= 80) return false;
+      if (quick.hasWhatsapp && !whatsappLink(b.phone)) return false;
       return true;
     });
   }, [results, quick, pipelineIds]);
