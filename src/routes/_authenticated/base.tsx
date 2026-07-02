@@ -17,7 +17,7 @@ import {
   type CompanyWithState, type CompanyStatus, type CompanyFilters,
 } from "@/lib/companies-client";
 import { BusinessModal } from "@/components/prospector/BusinessModal";
-import type { Business } from "@/lib/mock-businesses";
+import { prospectorStore, useProspectorStore } from "@/lib/prospector-store";
 
 export const Route = createFileRoute("/_authenticated/base")({
   head: () => ({ meta: [{ title: "Base de Empresas — Prospector AI" }] }),
@@ -27,13 +27,13 @@ export const Route = createFileRoute("/_authenticated/base")({
 const PAGE_SIZE = 50;
 
 function BasePage() {
+  const store = useProspectorStore();
   const [rows, setRows] = useState<CompanyWithState[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [facets, setFacets] = useState<{ countries: string[]; categories: string[] }>({ countries: [], categories: [] });
   const [filters, setFilters] = useState<CompanyFilters>({});
-  const [active, setActive] = useState<Business | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -214,7 +214,7 @@ function BasePage() {
                   {rows.map((c) => (
                     <tr
                       key={c.id}
-                      onClick={() => setActive(companyToBusiness(c))}
+                      onClick={() => prospectorStore.set({ activeBusiness: companyToBusiness(c) })}
                       className="cursor-pointer border-t border-border/60 hover:bg-background/40"
                     >
                       <td className="truncate px-3 py-2.5">
@@ -284,7 +284,10 @@ function BasePage() {
           </>
         )}
       </main>
-      <BusinessModal business={active} onClose={() => { setActive(null); load(); }} />
+      <BusinessModal
+        business={store.activeBusiness}
+        onClose={() => { prospectorStore.set({ activeBusiness: null }); load(); }}
+      />
     </div>
   );
 }

@@ -10,7 +10,7 @@ import {
   type CompanyWithState, type CompanyStatus,
 } from "@/lib/companies-client";
 import { BusinessModal } from "@/components/prospector/BusinessModal";
-import type { Business } from "@/lib/mock-businesses";
+import { prospectorStore, useProspectorStore } from "@/lib/prospector-store";
 
 export const Route = createFileRoute("/_authenticated/crm")({
   head: () => ({ meta: [{ title: "Pipeline — Prospector AI" }] }),
@@ -31,9 +31,9 @@ const STATUS_COLORS: Record<CompanyStatus, string> = {
 };
 
 function PipelinePage() {
+  const store = useProspectorStore();
   const [companies, setCompanies] = useState<CompanyWithState[]>([]);
   const [loading, setLoading] = useState(true);
-  const [active, setActive] = useState<Business | null>(null);
 
   const refresh = async () => {
     try {
@@ -123,7 +123,7 @@ function PipelinePage() {
                     <PipelineCard
                       key={c.id}
                       c={c}
-                      onOpen={() => setActive(companyToBusiness(c))}
+                      onOpen={() => prospectorStore.set({ activeBusiness: companyToBusiness(c) })}
                       onStatus={(to) => handleStatus(c, to)}
                       onRemove={() => handleRemove(c)}
                     />
@@ -134,7 +134,10 @@ function PipelinePage() {
           </div>
         )}
       </main>
-      <BusinessModal business={active} onClose={() => { setActive(null); refresh(); }} />
+      <BusinessModal
+        business={store.activeBusiness}
+        onClose={() => { prospectorStore.set({ activeBusiness: null }); refresh(); }}
+      />
     </div>
   );
 }
