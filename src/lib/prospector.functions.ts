@@ -179,6 +179,11 @@ export const generatePitch = createServerFn({ method: "POST" })
 
 IDIOMA: detecte o país ("${data.country}") e escreva SEMPRE na língua oficial local (Brasil→PT-BR, Portugal→PT-PT, USA→EN, Spain→ES, France→FR, Germany→DE, Italy→IT, Netherlands→NL, etc.). Nunca assuma português. Adapte formas de tratamento à cultura local.
 
+========================================================
+LINGUAGEM NEUTRA (importante)
+========================================================
+Use expressões naturais do país do cliente, mas EVITE regionalismos muito marcados ou gírias que possam soar estranhos noutros países ou em contexto comercial. Prefira sempre a alternativa mais simples, clara e universal. Exemplos aceitáveis para o CTA final: "Posso enviar-lhe o link?", "Posso partilhar a demonstração?", "Posso mostrar-lhe um exemplo?" (adaptar ao idioma local). Nada de calão, nada de expressões idiomáticas regionais quando existir opção neutra equivalente.
+
 Retorne JSON ESTRITO com três chaves: "formal", "consultive", "whatsapp". Sem markdown, sem comentários.
 
 ========================================================
