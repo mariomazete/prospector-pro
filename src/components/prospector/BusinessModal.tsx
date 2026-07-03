@@ -309,21 +309,20 @@ export function BusinessModal({ business, onClose }: Props) {
       toast.error("Invalid phone number.");
       return;
     }
-    // Use web.whatsapp.com/send with a stable named target so the browser
-    // reuses the same tab on subsequent clicks instead of opening a new one.
-    // Browsers cannot discover tabs opened by the user, but a named target
-    // reliably reuses any tab we've previously opened with the same name.
     const url = `https://web.whatsapp.com/send?phone=${digits}&text=${encodeURIComponent(message)}`;
-    const handledByConnector = whatsAppConnectorReady ? await requestWhatsAppConnector(url) : false;
-    if (!handledByConnector) {
-      const win = window.open(url, "prospector_whatsapp_web");
-      if (!win) {
-        toast.error("Browser blocked WhatsApp Web.");
-        return;
-      }
-      win.focus();
+
+    if (!whatsAppConnectorReady) {
+      toast.error("Instale ou atualize o Connector e depois recarregue o Prospector. Assim evitamos abrir abas duplicadas.");
+      return;
     }
-    toast.success(handledByConnector ? "WhatsApp tab reused." : "Opening WhatsApp Web…");
+
+    const handledByConnector = await requestWhatsAppConnector(url);
+    if (!handledByConnector) {
+      toast.error("O Connector não conseguiu reutilizar o WhatsApp. Recarregue o Prospector e tente novamente.");
+      return;
+    }
+
+    toast.success("WhatsApp tab reused.");
     try {
       const id = await ensurePersistedCompanyId();
       if (id) {
