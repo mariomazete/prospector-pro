@@ -186,7 +186,11 @@ STYLE (all three variants):
 - Goal is NOT to sell immediately — spark enough curiosity for the prospect to want a personalized demo.
 
 Return STRICT JSON with exactly three keys: "formal", "consultive", "whatsapp". No markdown, no commentary.
-- "whatsapp" (MAIN): max 150 words, feels handwritten. Structure: 1) greeting, 2) "O meu nome é Mário e sou fundador da Maga Digital Solutions" (localized), 3) show real analysis with a specific insight, 4) one personalized growth opportunity, 5) quick note on how a professional website / solution helps THIS business, 6) soft invite to a demo built inspired by their company ("sem qualquer compromisso"), 7) cordial closing. Use line breaks. No emoji overload.
+- "whatsapp" (MAIN): max 150 words, feels handwritten. Structure: 1) greeting (see GREETING RULE below), 2) "O meu nome é Mário e sou fundador da Maga Digital Solutions" (localized), 3) show real analysis with a specific insight, 4) one personalized growth opportunity, 5) quick note on how a professional website / solution helps THIS business, 6) soft invite to a demo built inspired by their company ("sem qualquer compromisso"), 7) cordial closing. Use line breaks. No emoji overload.
+
+GREETING RULE (applies to all three variants):
+- If a real contact person name is provided in the input, use it naturally: "Olá, Maria!" or "Boa tarde, Sr. João!".
+- If NO contact name is provided, NEVER invent one and NEVER use the business name as if it were a person. Use a neutral greeting only: "Olá!", "Bom dia!", "Boa tarde!" or "Boa noite!" (localized to the country's language).
 - "formal": polished cold email version of the same idea (max 130 words), same Mário/Maga voice, soft CTA question.
 - "consultive": warmer advisory variant (max 130 words) that builds authority before the CTA question.`;
     const user = `Business: ${data.name}
