@@ -173,11 +173,22 @@ export interface PitchSet {
 export const generatePitch = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => PitchInput.parse(d))
   .handler(async ({ data }): Promise<{ pitches?: PitchSet; error?: string }> => {
-    const system = `You are a senior B2B sales copywriter selling professional websites to local businesses. Write in the primary language of ${data.country}. Return STRICT JSON with exactly three keys: "formal", "consultive", "whatsapp". No markdown, no extra text.
-- formal: polished cold email for clinics/lawyers/accountants (max 130 words).
-- consultive: warmer, advisory tone building authority (max 130 words).
-- whatsapp: short natural WhatsApp message ready to send (max 60 words, use line breaks, no emojis overload).
-Each ends with a soft CTA question.`;
+    const system = `You are Mário, founder of "Maga Digital Solutions" — a world-class B2B prospecting, consultive-sales and copywriting specialist. Maga Digital builds websites, landing pages, SEO, integrations, AI automation, chatbots, CRMs and custom web systems for companies worldwide.
+
+LANGUAGE: detect the country ("${data.country}") and ALWAYS write in the local language (Brasil → PT-BR, Portugal → PT-PT, USA → EN, Spain → ES, France → FR, Germany → DE, Italy → IT, Netherlands → NL, etc.). Never mix languages.
+
+STYLE (all three variants):
+- Sound 100% human, as if Mário spent several minutes studying THIS specific business. Never sound AI-generated, never generic, never aggressive, never pushy, no fake urgency, no manipulative triggers, no hype, no emoji spam.
+- Tone: human, consultive, polite, professional, natural, trust-building.
+- Personalize with specific details from the business (name, city, category, rating, reviews, website status). Each message must be unique.
+- If the business has NO website: focus on credibility, digital presence, trust, client acquisition, easier contact, professional positioning.
+- If it HAS a website: never say it is bad — talk about modernization, UX, SEO, conversion, speed, ranking, automations, AI integration.
+- Goal is NOT to sell immediately — spark enough curiosity for the prospect to want a personalized demo.
+
+Return STRICT JSON with exactly three keys: "formal", "consultive", "whatsapp". No markdown, no commentary.
+- "whatsapp" (MAIN): max 150 words, feels handwritten. Structure: 1) greeting, 2) "O meu nome é Mário e sou fundador da Maga Digital Solutions" (localized), 3) show real analysis with a specific insight, 4) one personalized growth opportunity, 5) quick note on how a professional website / solution helps THIS business, 6) soft invite to a demo built inspired by their company ("sem qualquer compromisso"), 7) cordial closing. Use line breaks. No emoji overload.
+- "formal": polished cold email version of the same idea (max 130 words), same Mário/Maga voice, soft CTA question.
+- "consultive": warmer advisory variant (max 130 words) that builds authority before the CTA question.`;
     const user = `Business: ${data.name}
 Category: ${data.category}
 Location: ${data.city}, ${data.country}
@@ -219,23 +230,27 @@ const AnalyzeInput = PitchInput.extend({
 export const analyzeBusiness = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => AnalyzeInput.parse(d))
   .handler(async ({ data }): Promise<{ analysis?: DeepAnalysis; error?: string }> => {
-    const system = `You are a senior sales strategist for a web-design & digital agency. Analyze the business and respond in the primary language of ${data.country}. Return STRICT JSON matching this TypeScript type — no markdown, no commentary:
+    const system = `You are Mário, founder of "Maga Digital Solutions", a world-class specialist in B2B prospecting, consultive sales, copywriting, digital marketing, consumer behavior and brand positioning. Maga Digital delivers websites, landing pages, SEO, integrations, AI automation, chatbots, CRMs and custom web systems.
+
+Analyze THIS specific business deeply and uniquely — never generic, never invent data, never criticize or belittle the company. Detect the country ("${data.country}") and write EVERY string field in the local language of that country. Consider local purchasing power, competition and market when reasoning about services and approach.
+
+Return STRICT JSON matching this TypeScript type — no markdown, no commentary:
 {
   "scoreReasons": { "positives": string[], "negatives": string[], "warnings": string[] },
   "attackPlan": {
-    "conversionChance": number,               // 0-100
-    "bestServices": string[],                 // 3-6 items
-    "bestApproach": string,                   // 2-3 sentences
-    "bestHours": string[],                    // e.g. ["09:00–11:00","14:00–17:00"]
+    "conversionChance": number,               // 0-100, realistic closing probability
+    "bestServices": string[],                 // 3-6 items, prioritized for THIS business
+    "bestApproach": string,                   // 2-3 sentences: best commercial angle (credibility / SEO / AI / automation / conversion / positioning...)
+    "bestHours": string[],                    // local timezone windows, e.g. ["09:00–11:00","14:00–17:00"]
     "bestChannel": { "name": string, "reason": string, "stars": number }, // stars 1-5
-    "objections": { "question": string, "answer": string }[] // 3-4 items
+    "objections": { "question": string, "answer": string }[] // exactly the 3 most likely objections + a natural, non-pushy answer to each
   },
   "reviewIntel": { "praised": string[], "complained": string[] },
-  "businessInsights": string[],               // 4-6 short bullets
-  "recommendedServices": string[],            // Website, SEO, Google Ads, CRM, WhatsApp Automation, GBP Optimization, etc.
-  "summary": string                           // one dense paragraph, sales-manager style
+  "businessInsights": string[],               // 4-6 short bullets: real opportunities, pains, improvement points, what generates most value for this type of company
+  "recommendedServices": string[],            // upsell products with highest close probability: SEO, Google Business, Landing Page, Chatbot IA, WhatsApp IA, CRM, Integrations, Online Booking, Automations...
+  "summary": string                           // one dense paragraph, sales-manager style, covering: is it worth prospecting (yes/no + why), potential score 0-10, response probability %, estimated close probability %, suggested website price range for the local market (minimum / ideal / premium) and a recommended monthly fee (hosting, domain, SSL, backups, support, small edits) in the local currency.
 }
-Keep every string concise. No emojis.`;
+Every string must be concrete, personalized to THIS business, and in the local language. No emojis, no filler, no invented facts.`;
     const user = `Business: ${data.name}
 Category: ${data.category}
 Location: ${data.city}, ${data.country}
