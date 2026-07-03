@@ -129,6 +129,7 @@ const PitchInput = z.object({
   reviewsCount: z.number(),
   hasWebsite: z.boolean(),
   website: z.string().nullable(),
+  utcOffsetMinutes: z.number().nullable().optional(),
 });
 
 async function callAI(system: string, user: string, expectJson: boolean): Promise<{ text: string; error?: string }> {
