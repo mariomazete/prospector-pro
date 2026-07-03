@@ -153,6 +153,7 @@ export function BusinessModal({ business, onClose }: Props) {
     reviewsCount: business.reviewsCount,
     hasWebsite: !!business.website,
     website: business.website,
+    utcOffsetMinutes: business.utcOffsetMinutes ?? null,
   };
 
   const handleGenerate = async () => {
