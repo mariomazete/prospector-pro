@@ -205,18 +205,18 @@ Use expressões naturais do país do cliente, mas EVITE regionalismos muito marc
 ========================================================
 CTA FINAL — regra crítica (jamais ignorar)
 ========================================================
-PROIBIDO terminar a mensagem com perguntas curtas e vazias como "Posso enviar o link?", "Posso enviar-lhe o link?", "Quer o link?", "Posso mandar o link?" ou qualquer variação. Esse tipo de fecho parece automático, transmite pouca curiosidade e pode até soar a golpe/phishing.
+A PALAVRA "link" ESTÁ TERMINANTEMENTE PROIBIDA em toda a mensagem — em qualquer idioma e em qualquer contexto. "Posso enviar o link?", "Quer o link?", "Envio-lhe o link?", "Mando o link?", "Send you the link?", "¿Te envío el link/enlace?" e todas as variações equivalentes soam a scam/phishing e destroem a confiança. Nunca escreva a palavra "link" (nem "enlace", nem "URL").
 
-A IA deve PRIMEIRO vender a demonstração (deixar claro que foi preparado algo personalizado para AQUELA empresa) e só DEPOIS pedir autorização para enviá-la. O leitor tem de pensar "quero ver essa demonstração" — nunca "porque é que esta pessoa me está a mandar um link?".
+O CTA deve SEMPRE oferecer a DEMONSTRAÇÃO personalizada, deixando claro que foi preparado algo a pensar naquela empresa específica, e fechar com "sem qualquer compromisso" (ou equivalente local). O leitor tem de pensar "quero ver essa demonstração" — nunca "porque é que esta pessoa me está a mandar um link?".
 
-Varie naturalmente entre chamadas como (adapte ao idioma local do país "${data.country}", nunca copie literalmente, nunca repita a mesma frase entre as três variantes):
-• "Preparei uma pequena demonstração personalizada de como poderia ficar o website da {NOME DA EMPRESA}. Posso enviar-lhe?"
-• "Criei uma demonstração baseada na {NOME DA EMPRESA} para mostrar o potencial da vossa presença online. Posso mostrar-lhe?"
-• "Gostaria de lhe mostrar uma pequena demonstração de como poderá ser o website da {NOME DA EMPRESA}. Posso enviar?"
-• "Preparei um exemplo personalizado só para ilustrar a ideia. Posso enviar-lhe essa demonstração?"
-• "Posso mostrar-lhe uma pequena demonstração personalizada do website que imaginei para a {NOME DA EMPRESA}?"
+Varie naturalmente entre chamadas como (adapte ao idioma local do país "${data.country}", nunca copie literalmente, nunca repita a mesma frase entre as três variantes, NUNCA use a palavra "link"):
+• "Posso enviar-lhe essa demonstração, sem qualquer compromisso?"
+• "Preparei uma pequena demonstração personalizada de como poderia ficar o website da {NOME DA EMPRESA}. Posso mostrar-lhe, sem compromisso?"
+• "Criei uma demonstração baseada na {NOME DA EMPRESA} para ilustrar o potencial da vossa presença online. Posso partilhá-la consigo?"
+• "Gostaria de lhe mostrar uma pequena demonstração de como poderá ser o website da {NOME DA EMPRESA} — posso enviar-lhe, sem qualquer compromisso?"
+• "Posso mostrar-lhe essa demonstração personalizada que preparei para a {NOME DA EMPRESA}? É apenas para ilustrar a ideia, sem compromisso."
 
-Cada variante (formal, consultive, whatsapp) tem de fechar com uma versão DIFERENTE deste CTA, sempre destacando que a demonstração foi feita a pensar naquela empresa específica.
+Cada variante (formal, consultive, whatsapp) tem de fechar com uma versão DIFERENTE deste CTA, sempre a oferecer a DEMONSTRAÇÃO (nunca "o link") e sempre destacando que foi feita a pensar naquela empresa.
 
 Retorne JSON ESTRITO com três chaves: "formal", "consultive", "whatsapp". Sem markdown, sem comentários.
 
@@ -259,7 +259,7 @@ ESTRUTURA (as três variantes seguem esta ordem, com tom diferente)
 4) Mostrar naturalmente a oportunidade. Se SEM website: algo como "Também reparei que a {NOME DA EMPRESA} ainda não possui um website." Se COM website: sugerir modernização/UX/SEO de forma suave, sem criticar o atual.
 5) Uma frase simples do porquê importa (ex.: "Hoje em dia muitas pessoas pesquisam uma empresa antes de entrar em contacto, e um website transmite mais confiança."). Curta.
 6) Criar curiosidade (ex.: "Por isso preparei uma pequena demonstração de como poderia ser o website da {NOME DA EMPRESA}.").
-7) Fechar com o CTA definido na secção "CTA FINAL" acima: vender primeiro a demonstração personalizada e só depois pedir autorização para a enviar. Pode acrescentar "sem qualquer compromisso" (localizado). NUNCA fechar apenas com "posso enviar o link?".
+7) Fechar com o CTA definido na secção "CTA FINAL" acima: oferecer a DEMONSTRAÇÃO personalizada + "sem qualquer compromisso" (localizado). NUNCA usar a palavra "link" (nem "enlace"/"URL"). NUNCA fechar com "posso enviar o link?".
 
 ========================================================
 TOM DE CADA VARIANTE (obrigatoriamente distintos)
