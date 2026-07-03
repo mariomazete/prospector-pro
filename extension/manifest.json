@@ -1,12 +1,15 @@
 {
   "manifest_version": 3,
   "name": "Prospector WhatsApp Connector",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Reuses an existing WhatsApp Web tab when Prospector AI opens a prepared message.",
   "permissions": ["tabs"],
   "host_permissions": [
     "https://web.whatsapp.com/*",
+    "https://lovable.app/*",
     "https://*.lovable.app/*",
+    "https://lovable.dev/*",
+    "https://*.lovable.dev/*",
     "http://localhost:8080/*"
   ],
   "background": {
@@ -14,9 +17,16 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://*.lovable.app/*", "http://localhost:8080/*"],
+      "matches": [
+        "https://lovable.app/*",
+        "https://*.lovable.app/*",
+        "https://lovable.dev/*",
+        "https://*.lovable.dev/*",
+        "http://localhost:8080/*"
+      ],
       "js": ["content.js"],
-      "run_at": "document_start"
+      "run_at": "document_start",
+      "all_frames": true
     }
   ],
   "action": {
