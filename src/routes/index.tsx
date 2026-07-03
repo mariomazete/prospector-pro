@@ -16,7 +16,7 @@ import {
 import { searchBusinesses } from "@/lib/prospector.functions";
 import { saveSearchHistory, loadSearchHistory, type SearchHistoryRow } from "@/lib/search-history.functions";
 import { prospectorStore, useProspectorStore } from "@/lib/prospector-store";
-import { listPipeline } from "@/lib/companies-client";
+import { listTouchedPlaceIds } from "@/lib/companies-client";
 import { whatsappLink } from "@/lib/whatsapp";
 import { toast } from "sonner";
 
@@ -47,14 +47,11 @@ function Index() {
   useEffect(() => {
     if (!user) { setPipelineIds(new Set()); return; }
     let cancelled = false;
-    listPipeline()
-      .then((rows) => {
-        if (cancelled) return;
-        setPipelineIds(new Set(rows.map((r) => r.place_id).filter(Boolean)));
-      })
-      .catch((e) => console.error("[pipeline ids]", e));
+    listTouchedPlaceIds()
+      .then((ids) => { if (!cancelled) setPipelineIds(ids); })
+      .catch((e) => console.error("[touched ids]", e));
     return () => { cancelled = true; };
-  }, [user, store.activeBusiness]);
+  }, [user, store.activeBusiness, store.searched]);
 
   const setResults = (r: Business[]) => prospectorStore.set({ results: r });
   const setSearched = (v: boolean) => prospectorStore.set({ searched: v });

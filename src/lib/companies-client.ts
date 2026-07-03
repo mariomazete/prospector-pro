@@ -223,6 +223,31 @@ export async function findCompanyByPlaceId(placeId: string): Promise<CompanyWith
   return { ...row, user_state: row.user_state && row.user_state.length > 0 ? row.user_state[0] : null };
 }
 
+/**
+ * Returns place_ids of every company the current user has already touched
+ * (in pipeline OR any status other than "never_prospected"). Used to hide
+ * already-contacted leads from the prospecting results.
+ */
+export async function listTouchedPlaceIds(): Promise<Set<string>> {
+  const userId = await currentUserId();
+  const { data, error } = await supabase
+    .from("user_company_state")
+    .select("in_pipeline, status, company:companies(place_id)")
+    .eq("user_id", userId);
+  if (error) throw error;
+  const ids = new Set<string>();
+  for (const r of (data ?? []) as Array<{
+    in_pipeline: boolean | null;
+    status: CompanyStatus | null;
+    company: { place_id: string } | null;
+  }>) {
+    const pid = r.company?.place_id;
+    if (!pid) continue;
+    if (r.in_pipeline || (r.status && r.status !== "never_prospected")) ids.add(pid);
+  }
+  return ids;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
