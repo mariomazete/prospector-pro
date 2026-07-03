@@ -243,7 +243,7 @@ ${(() => {
   const h = new Date(localMs).getUTCHours();
   const period =
     h >= 5 && h < 12 ? "morning (Bom dia / Good morning / Buenos días / Bonjour / Guten Morgen)"
-    : h >= 12 && h < 19 ? "afternoon (Boa tarde / Good afternoon / Buenas tardes / Bon après-midi / Guten Tag)"
+    : h >= 12 && h < 18 ? "afternoon (Boa tarde / Good afternoon / Buenas tardes / Bon après-midi / Guten Tag)"
     : "evening/night (Boa noite / Good evening / Buenas noches / Bonsoir / Guten Abend)";
   return `Local time at prospect: ${String(h).padStart(2, "0")}:00 — greeting MUST match this ${period}. Do not use a greeting from a different period.`;
 })()}`;
