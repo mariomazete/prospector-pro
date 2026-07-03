@@ -210,6 +210,33 @@ export function BusinessModal({ business, onClose }: Props) {
     setTimeout(() => setCopiedKey(null), 1500);
   };
 
+  const sendWhatsApp = async (
+    phone: string | null | undefined,
+    message: string,
+    variant: "formal" | "consultive" | "whatsapp",
+  ) => {
+    if (!phone) {
+      toast.error("No phone number available.");
+      return;
+    }
+    const digits = phone.replace(/\D/g, "");
+    if (!digits) {
+      toast.error("Invalid phone number.");
+      return;
+    }
+    const url = `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+    toast.success("WhatsApp opened.");
+    try {
+      const id = await ensurePersistedCompanyId();
+      if (id) {
+        const label = variant === "whatsapp" ? "WhatsApp" : variant === "formal" ? "Formal" : "Consultive";
+        await addEvent(id, "pitch", `WhatsApp opened using the ${label} pitch.`).catch(() => {});
+        refreshEvents(id);
+      }
+    } catch { /* non-blocking */ }
+  };
+
   const handleAddToPipeline = async () => {
     if (!user) {
       toast("Sign in to add to pipeline");
