@@ -40,8 +40,9 @@ function BasePage() {
     setLoading(true);
     try {
       const res = await listCompanies({ ...filters, limit: PAGE_SIZE, offset: page * PAGE_SIZE });
-      setRows(res.rows);
-      setTotal(res.total);
+      const visible = res.rows.filter((c) => !c.user_state?.in_pipeline);
+      setRows(visible);
+      setTotal(res.total - (res.rows.length - visible.length));
     } catch (e) {
       toast.error((e as Error).message);
     } finally { setLoading(false); }
