@@ -224,9 +224,14 @@ export function BusinessModal({ business, onClose }: Props) {
       toast.error("Invalid phone number.");
       return;
     }
-    const url = `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
-    window.open(url, "_blank", "noopener,noreferrer");
-    toast.success("WhatsApp opened.");
+    // Use web.whatsapp.com/send with a stable named target so the browser
+    // reuses the same tab on subsequent clicks instead of opening a new one.
+    // Browsers cannot discover tabs opened by the user, but a named target
+    // reliably reuses any tab we've previously opened with the same name.
+    const url = `https://web.whatsapp.com/send?phone=${digits}&text=${encodeURIComponent(message)}`;
+    const win = window.open(url, "whatsapp_web");
+    if (win) win.focus();
+    toast.success("Opening WhatsApp Web…");
     try {
       const id = await ensurePersistedCompanyId();
       if (id) {
