@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   MapPin, Phone, Globe, Clock, Sparkles, Copy, Check, Star, ExternalLink,
   Target, TrendingUp, MessageSquare, ThumbsUp, ThumbsDown, AlertTriangle,
-  Lightbulb, Loader2,
+  Lightbulb, Loader2, RefreshCw, Mail,
 } from "lucide-react";
 import type { Business } from "@/lib/mock-businesses";
 import { calcOpportunityScore } from "@/lib/mock-businesses";
@@ -485,9 +485,39 @@ export function BusinessModal({ business, onClose }: Props) {
                   <TabsContent key={k} value={k} className="mt-3">
                     <div className="rounded-lg border border-border bg-background/60 p-3">
                       <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-foreground/90">{pitches[k]}</pre>
-                      <Button size="sm" variant="ghost" onClick={() => copy(pitches[k], k)} className="mt-2 h-7 rounded-lg text-xs">
-                        {copiedKey === k ? <><Check className="mr-1 h-3.5 w-3.5" /> Copied</> : <><Copy className="mr-1 h-3.5 w-3.5" /> Copy</>}
-                      </Button>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        <Button size="sm" variant="ghost" onClick={() => copy(pitches[k], k)} className="h-7 rounded-lg text-xs">
+                          {copiedKey === k ? <><Check className="mr-1 h-3.5 w-3.5" /> Copied</> : <><Copy className="mr-1 h-3.5 w-3.5" /> Copy</>}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => sendWhatsApp(business.phone, pitches[k], k)}
+                          disabled={!business.phone}
+                          title={business.phone ? "Open WhatsApp with this pitch" : "No phone available"}
+                          className="h-7 rounded-lg text-xs text-emerald-400 hover:text-emerald-300"
+                        >
+                          <MessageSquare className="mr-1 h-3.5 w-3.5" /> Send WhatsApp
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          disabled
+                          title="Coming soon"
+                          className="h-7 rounded-lg text-xs opacity-60"
+                        >
+                          <Mail className="mr-1 h-3.5 w-3.5" /> Email
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={handleGenerate}
+                          disabled={generating}
+                          className="h-7 rounded-lg text-xs"
+                        >
+                          <RefreshCw className={`mr-1 h-3.5 w-3.5 ${generating ? "animate-spin" : ""}`} /> Regenerate
+                        </Button>
+                      </div>
                     </div>
                   </TabsContent>
                 ))}
