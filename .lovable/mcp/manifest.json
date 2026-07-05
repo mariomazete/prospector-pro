@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "sdk_version": "0.20.0",
+  "path": "/mcp",
+  "auth": {
+    "type": "none"
+  },
+  "mcp": {
+    "server": {
+      "name": "prospector-ai-mcp",
+      "version": "0.1.0",
+      "title": "Prospector AI"
+    },
+    "tools": [
+      {
+        "name": "search_businesses",
+        "title": "Search local businesses",
+        "description": "Search Google Places for local businesses by niche and location. Returns name, category, rating, reviews, website, phone, and address for each result.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "niche": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Business niche or category, e.g. 'dentists', 'restaurants'."
+            },
+            "country": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Country name, e.g. 'Portugal'."
+            },
+            "city": {
+              "description": "Optional city name to narrow the search.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "niche",
+            "country"
+          ]
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
