@@ -262,9 +262,7 @@ function BasePage() {
                             return wa ? (
                               <a
                                 href={wa}
-                                target="_blank"
-                                rel="noreferrer"
-                                title="WhatsApp"
+                                title="Abrir no app WhatsApp"
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <Phone className="h-3.5 w-3.5 text-emerald-400 hover:text-emerald-300" />

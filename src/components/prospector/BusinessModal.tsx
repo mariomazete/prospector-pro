@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   MapPin, Phone, Globe, Clock, Sparkles, Copy, Check, Star, ExternalLink,
   Target, TrendingUp, MessageSquare, ThumbsUp, ThumbsDown, AlertTriangle,
-  Lightbulb, Loader2, RefreshCw, Mail, Download,
+  Lightbulb, Loader2, RefreshCw, Mail,
 } from "lucide-react";
 import type { Business } from "@/lib/mock-businesses";
 import { calcOpportunityScore } from "@/lib/mock-businesses";
@@ -32,61 +32,7 @@ import { Bookmark, Heart, Calendar, Tag, History } from "lucide-react";
 import { toast } from "sonner";
 
 const AI_CACHE_KEY = "prospector-ai:ai-cache:v1";
-const WHATSAPP_CONNECTOR_SOURCE = "prospector-whatsapp-extension";
-const WHATSAPP_APP_SOURCE = "prospector-ai";
-const WHATSAPP_CONNECTOR_TIMEOUT_MS = 800;
-
 type AICacheEntry = { pitches?: PitchSet | null; analysis?: DeepAnalysis | null };
-
-type WhatsAppConnectorMessage = {
-  source?: string;
-  type?: string;
-  requestId?: string;
-  ok?: boolean;
-  error?: string;
-};
-
-function isWhatsAppConnectorMessage(value: unknown): value is WhatsAppConnectorMessage {
-  return typeof value === "object" && value !== null && "source" in value && "type" in value;
-}
-
-function createRequestId(): string {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
-  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-}
-
-function requestWhatsAppConnector(url: string): Promise<boolean> {
-  if (typeof window === "undefined") return Promise.resolve(false);
-
-  return new Promise((resolve) => {
-    const requestId = createRequestId();
-    let settled = false;
-
-    const finish = (ok: boolean) => {
-      if (settled) return;
-      settled = true;
-      window.clearTimeout(timeoutId);
-      window.removeEventListener("message", onMessage);
-      resolve(ok);
-    };
-
-    const onMessage = (event: MessageEvent<unknown>) => {
-      if (event.source !== window || !isWhatsAppConnectorMessage(event.data)) return;
-      if (event.data.source !== WHATSAPP_CONNECTOR_SOURCE || event.data.type !== "OPEN_WHATSAPP_RESULT") return;
-      if (event.data.requestId !== requestId) return;
-      finish(event.data.ok === true);
-    };
-
-    const timeoutId = window.setTimeout(() => finish(false), WHATSAPP_CONNECTOR_TIMEOUT_MS);
-    window.addEventListener("message", onMessage);
-    window.postMessage({
-      source: WHATSAPP_APP_SOURCE,
-      type: "OPEN_WHATSAPP",
-      requestId,
-      url,
-    }, window.location.origin);
-  });
-}
 
 function readAICache(): Record<string, AICacheEntry> {
   if (typeof window === "undefined") return {};
@@ -125,25 +71,12 @@ export function BusinessModal({ business, onClose }: Props) {
   const [now, setNow] = useState(() => Date.now());
   const [analysis, setAnalysis] = useState<DeepAnalysis | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
-  const [whatsAppConnectorReady, setWhatsAppConnectorReady] = useState(false);
 
   useEffect(() => {
     if (!business) return;
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, [business]);
-
-  useEffect(() => {
-    const onMessage = (event: MessageEvent<unknown>) => {
-      if (event.source !== window || !isWhatsAppConnectorMessage(event.data)) return;
-      if (event.data.source === WHATSAPP_CONNECTOR_SOURCE && event.data.type === "READY") {
-        setWhatsAppConnectorReady(true);
-      }
-    };
-    window.addEventListener("message", onMessage);
-    window.postMessage({ source: WHATSAPP_APP_SOURCE, type: "PING" }, window.location.origin);
-    return () => window.removeEventListener("message", onMessage);
-  }, []);
 
   useEffect(() => {
     const cached = business ? readAICache()[business.id] : undefined;
@@ -276,23 +209,6 @@ export function BusinessModal({ business, onClose }: Props) {
     navigator.clipboard.writeText(text);
     setCopiedKey(key);
     setTimeout(() => setCopiedKey(null), 1500);
-  };
-
-  const downloadWhatsAppConnector = async () => {
-    try {
-      const res = await fetch("/prospector-whatsapp-connector.zip");
-      if (!res.ok) throw new Error(`Download failed: ${res.status}`);
-      const blob = await res.blob();
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = "prospector-whatsapp-connector.zip";
-      a.click();
-      URL.revokeObjectURL(a.href);
-      toast.success("Connector downloaded.");
-    } catch (err) {
-      console.error(err);
-      toast.error("Could not download the connector.");
-    }
   };
 
   const sendWhatsApp = async (
@@ -615,22 +531,11 @@ export function BusinessModal({ business, onClose }: Props) {
                           variant="ghost"
                           onClick={() => sendWhatsApp(business.phone, pitches[k], k)}
                           disabled={!business.phone}
-                          title={business.phone ? (whatsAppConnectorReady ? "Reuse WhatsApp tab with this pitch" : "Open WhatsApp with this pitch") : "No phone available"}
+                          title={business.phone ? "Open the installed WhatsApp app with this pitch" : "No phone available"}
                           className="h-7 rounded-lg text-xs text-emerald-400 hover:text-emerald-300"
                         >
                           <MessageSquare className="mr-1 h-3.5 w-3.5" /> Send WhatsApp
                         </Button>
-                        {!whatsAppConnectorReady && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={downloadWhatsAppConnector}
-                            title="Download Chrome connector to reuse the active WhatsApp tab"
-                            className="h-7 rounded-lg text-xs"
-                          >
-                            <Download className="mr-1 h-3.5 w-3.5" /> Connector
-                          </Button>
-                        )}
                         <Button
                           size="sm"
                           variant="ghost"

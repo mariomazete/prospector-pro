@@ -114,10 +114,8 @@ export function ResultsTable({ data, loading, onView, page, onPageChange }: Prop
                       {waLink(b.phone) ? (
                         <a
                           href={waLink(b.phone)!}
-                          target="_blank"
-                          rel="noreferrer"
                           onClick={(e) => e.stopPropagation()}
-                          title="Open in WhatsApp"
+                          title="Open in WhatsApp app"
                           className="grid h-5 w-5 shrink-0 place-items-center rounded-md bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25"
                         >
                           <MessageCircle className="h-3 w-3" />
