@@ -309,20 +309,18 @@ export function BusinessModal({ business, onClose }: Props) {
       toast.error("Invalid phone number.");
       return;
     }
-    const url = `https://web.whatsapp.com/send?phone=${digits}&text=${encodeURIComponent(message)}`;
+    // Open the WhatsApp desktop app via its protocol handler.
+    // This avoids opening a new browser tab and does not reload web.whatsapp.com.
+    const url = `whatsapp://send?phone=${digits}&text=${encodeURIComponent(message)}`;
+    const a = document.createElement("a");
+    a.href = url;
+    a.rel = "noopener noreferrer";
+    a.style.display = "none";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
 
-    if (!whatsAppConnectorReady) {
-      toast.error("Instale ou atualize o Connector e depois recarregue o Prospector. Assim evitamos abrir abas duplicadas.");
-      return;
-    }
-
-    const handledByConnector = await requestWhatsAppConnector(url);
-    if (!handledByConnector) {
-      toast.error("O Connector não conseguiu reutilizar o WhatsApp. Recarregue o Prospector e tente novamente.");
-      return;
-    }
-
-    toast.success("WhatsApp tab reused.");
+    toast.success("Abrindo o WhatsApp…");
     try {
       const id = await ensurePersistedCompanyId();
       if (id) {
