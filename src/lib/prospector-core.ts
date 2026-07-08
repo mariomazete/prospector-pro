@@ -8,6 +8,8 @@ interface PlacesReview {
   rating?: number;
   text?: { text?: string };
 }
+interface PlacesTimePoint { day?: number; hour?: number; minute?: number }
+interface PlacesPeriod { open?: PlacesTimePoint; close?: PlacesTimePoint }
 interface PlaceResult {
   id: string;
   displayName?: { text?: string };
@@ -18,7 +20,7 @@ interface PlaceResult {
   rating?: number;
   userRatingCount?: number;
   googleMapsUri?: string;
-  regularOpeningHours?: { weekdayDescriptions?: string[]; openNow?: boolean };
+  regularOpeningHours?: { weekdayDescriptions?: string[]; openNow?: boolean; periods?: PlacesPeriod[] };
   photos?: PlacesPhoto[];
   reviews?: PlacesReview[];
   primaryTypeDisplayName?: { text?: string };
@@ -61,6 +63,7 @@ const FIELD_MASK = [
   "places.userRatingCount",
   "places.googleMapsUri",
   "places.regularOpeningHours",
+  "places.regularOpeningHours.periods",
   "places.photos",
   "places.reviews",
   "places.primaryTypeDisplayName",
