@@ -34,6 +34,32 @@ import { toast } from "sonner";
 const AI_CACHE_KEY = "prospector-ai:ai-cache:v1";
 type AICacheEntry = { pitches?: PitchSet | null; analysis?: DeepAnalysis | null };
 
+/**
+ * Compute whether the business is open *right now* using its structured weekly
+ * periods (from Google Places) + its UTC offset. Handles periods that wrap
+ * past midnight (close.day > open.day) and 24h periods (missing close).
+ */
+function computeOpenNow(
+  periods: HoursPeriod[] | null,
+  utcOffsetMinutes: number | null,
+  nowMs: number,
+): boolean | null {
+  if (!periods || periods.length === 0 || typeof utcOffsetMinutes !== "number") return null;
+  const local = new Date(nowMs + utcOffsetMinutes * 60_000);
+  // Use UTC getters because we've already shifted the timestamp into local wall-clock.
+  const nowMin = local.getUTCDay() * 1440 + local.getUTCHours() * 60 + local.getUTCMinutes();
+  const WEEK = 7 * 1440;
+  for (const p of periods) {
+    const openMin = p.open.day * 1440 + p.open.hour * 60 + p.open.minute;
+    if (!p.close) return true; // open 24/7 (per Places convention when close is missing)
+    let closeMin = p.close.day * 1440 + p.close.hour * 60 + p.close.minute;
+    if (closeMin <= openMin) closeMin += WEEK; // wraps past week end
+    const n = nowMin < openMin ? nowMin + WEEK : nowMin;
+    if (n >= openMin && n < closeMin) return true;
+  }
+  return false;
+}
+
 function readAICache(): Record<string, AICacheEntry> {
   if (typeof window === "undefined") return {};
   try { return JSON.parse(window.sessionStorage.getItem(AI_CACHE_KEY) ?? "{}"); } catch { return {}; }
