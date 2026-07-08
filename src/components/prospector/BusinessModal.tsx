@@ -12,7 +12,7 @@ import {
   Target, TrendingUp, MessageSquare, ThumbsUp, ThumbsDown, AlertTriangle,
   Lightbulb, Loader2, RefreshCw, Mail,
 } from "lucide-react";
-import type { Business } from "@/lib/mock-businesses";
+import type { Business, HoursPeriod } from "@/lib/mock-businesses";
 import { calcOpportunityScore } from "@/lib/mock-businesses";
 import { OpportunityBadge } from "./OpportunityBadge";
 import { generatePitch, analyzeBusiness, ensureCompany, type DeepAnalysis, type PitchSet } from "@/lib/prospector.functions";
@@ -144,6 +144,8 @@ export function BusinessModal({ business, onClose }: Props) {
     typeof business.utcOffsetMinutes === "number"
       ? new Date(now + business.utcOffsetMinutes * 60_000).toISOString().slice(11, 16)
       : null;
+
+  const openNowLive = computeOpenNow(business.hoursPeriods ?? null, business.utcOffsetMinutes ?? null, now);
 
   const payload = {
     name: business.name,
@@ -344,9 +346,16 @@ export function BusinessModal({ business, onClose }: Props) {
               </div>
               <div className="flex flex-col items-end gap-2">
                 <OpportunityBadge score={score} />
-                {/* "Open now" removido: o valor vinha cacheado do Places API
-                    (busca com TTL de 14 dias) e ficava congelado no momento
-                    da consulta original, mostrando estado incorreto. */}
+                {openNowLive !== null && (
+                  <div className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium ${
+                    openNowLive
+                      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+                      : "border-red-500/30 bg-red-500/10 text-red-400"
+                  }`}>
+                    <span className={`h-1.5 w-1.5 rounded-full ${openNowLive ? "bg-emerald-400" : "bg-red-400"}`} />
+                    {openNowLive ? "Open now" : "Closed"}
+                  </div>
+                )}
                 {localTime && (
                   <div className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary tabular-nums">
                     <Clock className="h-3 w-3" />
