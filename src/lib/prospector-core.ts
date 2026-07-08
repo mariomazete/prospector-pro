@@ -164,6 +164,19 @@ export async function toBusiness(
   const reviewsCount = p.userRatingCount ?? 0;
   const website = p.websiteUri ?? null;
 
+  const hoursPeriods = (p.regularOpeningHours?.periods ?? [])
+    .map((pd) => {
+      const o = pd.open;
+      if (!o || typeof o.day !== "number") return null;
+      const open = { day: o.day, hour: o.hour ?? 0, minute: o.minute ?? 0 };
+      const c = pd.close;
+      const close = c && typeof c.day === "number"
+        ? { day: c.day, hour: c.hour ?? 0, minute: c.minute ?? 0 }
+        : null;
+      return { open, close };
+    })
+    .filter((x): x is NonNullable<typeof x> => x !== null);
+
   return {
     id: p.id,
     name: p.displayName?.text ?? "Unknown",
@@ -183,6 +196,7 @@ export async function toBusiness(
     aiSummary: buildAiSummary({ website, rating, reviewsCount }),
     utcOffsetMinutes: typeof p.utcOffsetMinutes === "number" ? p.utcOffsetMinutes : null,
     openNow: typeof p.regularOpeningHours?.openNow === "boolean" ? p.regularOpeningHours.openNow : null,
+    hoursPeriods: hoursPeriods.length > 0 ? hoursPeriods : null,
   };
 }
 
