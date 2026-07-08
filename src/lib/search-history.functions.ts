@@ -131,6 +131,7 @@ export const loadSearchHistory = createServerFn({ method: "POST" })
     const businesses: Business[] = companies.map((c) => {
       const photos = Array.isArray(c.photos) ? (c.photos as unknown as string[]) : [];
       const reviews = Array.isArray(c.reviews) ? (c.reviews as unknown as Business["reviews"]) : [];
+      const hoursPeriods = Array.isArray(c.hours) ? (c.hours as unknown as Business["hoursPeriods"]) : null;
       return {
         id: c.place_id,
         name: c.name,
@@ -150,6 +151,7 @@ export const loadSearchHistory = createServerFn({ method: "POST" })
         isLocal: false,
         utcOffsetMinutes: c.utc_offset_minutes ?? null,
         openNow: c.open_now ?? null,
+        hoursPeriods,
       };
     });
     return { businesses, row: row as unknown as SearchHistoryRow };
