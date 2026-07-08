@@ -25,6 +25,7 @@ export type Database = {
           country: string | null
           created_at: string
           email: string | null
+          emails: string[] | null
           facebook: string | null
           first_seen_at: string
           hours: Json | null
@@ -64,6 +65,7 @@ export type Database = {
           country?: string | null
           created_at?: string
           email?: string | null
+          emails?: string[] | null
           facebook?: string | null
           first_seen_at?: string
           hours?: Json | null
@@ -103,6 +105,7 @@ export type Database = {
           country?: string | null
           created_at?: string
           email?: string | null
+          emails?: string[] | null
           facebook?: string | null
           first_seen_at?: string
           hours?: Json | null
