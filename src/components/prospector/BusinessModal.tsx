@@ -344,16 +344,9 @@ export function BusinessModal({ business, onClose }: Props) {
               </div>
               <div className="flex flex-col items-end gap-2">
                 <OpportunityBadge score={score} />
-                {typeof business.openNow === "boolean" && (
-                  <div className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium ${
-                    business.openNow
-                      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-                      : "border-red-500/30 bg-red-500/10 text-red-400"
-                  }`}>
-                    <span className={`h-1.5 w-1.5 rounded-full ${business.openNow ? "bg-emerald-400" : "bg-red-400"}`} />
-                    {business.openNow ? "Open now" : "Closed"}
-                  </div>
-                )}
+                {/* "Open now" removido: o valor vinha cacheado do Places API
+                    (busca com TTL de 14 dias) e ficava congelado no momento
+                    da consulta original, mostrando estado incorreto. */}
                 {localTime && (
                   <div className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary tabular-nums">
                     <Clock className="h-3 w-3" />
