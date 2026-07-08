@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Database, Json } from "@/integrations/supabase/types";
-import type { Business } from "@/lib/mock-businesses";
+import type { Business, HoursPeriod } from "@/lib/mock-businesses";
 import type { DeepAnalysis, PitchSet } from "@/lib/prospector.functions";
 import { whatsappLink } from "@/lib/whatsapp";
 
@@ -341,6 +341,7 @@ export async function updateCompanyAi(
 export function companyToBusiness(c: CompanyRow): Business {
   const photos = Array.isArray(c.photos) ? (c.photos as unknown as string[]) : [];
   const reviews = Array.isArray(c.reviews) ? (c.reviews as unknown as Business["reviews"]) : [];
+  const hoursPeriods = Array.isArray(c.hours) ? (c.hours as unknown as HoursPeriod[]) : null;
   return {
     id: c.place_id,
     name: c.name,
@@ -360,6 +361,7 @@ export function companyToBusiness(c: CompanyRow): Business {
     isLocal: false,
     utcOffsetMinutes: c.utc_offset_minutes ?? null,
     openNow: c.open_now ?? null,
+    hoursPeriods,
   };
 }
 

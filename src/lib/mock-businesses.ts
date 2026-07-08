@@ -24,7 +24,12 @@ export interface Business {
   isLocal: boolean;
   utcOffsetMinutes?: number | null;
   openNow?: boolean | null;
+  /** Structured weekly opening periods from Google Places (day 0 = Sunday). */
+  hoursPeriods?: HoursPeriod[] | null;
 }
+
+export interface HoursPoint { day: number; hour: number; minute: number }
+export interface HoursPeriod { open: HoursPoint; close?: HoursPoint | null }
 
 // Local aiSummary generator (used by real API path too)
 export function buildAiSummary(b: Pick<Business, "website" | "rating" | "reviewsCount">): string[] {

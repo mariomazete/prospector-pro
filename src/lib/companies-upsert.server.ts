@@ -36,6 +36,7 @@ export async function upsertCompaniesFromBusinesses(
         reviews: b.reviews as unknown as never,
         utc_offset_minutes: b.utcOffsetMinutes,
         open_now: b.openNow,
+        hours: (b.hoursPeriods ?? null) as unknown as never,
         opportunity_score: score,
         temperature:
           score >= 85 ? "hot" : score >= 65 ? "warm" : "cold",
