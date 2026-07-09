@@ -152,6 +152,7 @@ export const loadSearchHistory = createServerFn({ method: "POST" })
         utcOffsetMinutes: c.utc_offset_minutes ?? null,
         openNow: c.open_now ?? null,
         hoursPeriods,
+        emails: c.emails ?? null,
       };
     });
     return { businesses, row: row as unknown as SearchHistoryRow };
