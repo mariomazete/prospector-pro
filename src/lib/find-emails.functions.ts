@@ -4,7 +4,11 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const Input = z.object({
   companyId: z.string().uuid().optional(),
-  website: z.string().url(),
+  website: z.string().url().nullable().optional(),
+  /** Fallback search context when the business has no website. */
+  name: z.string().optional(),
+  city: z.string().optional(),
+  country: z.string().optional(),
 });
 
 // Common contact pages worth probing beyond the homepage.
@@ -79,34 +83,75 @@ function sameOriginUrl(base: string, path: string): string | null {
   }
 }
 
+/**
+ * Fallback: query DuckDuckGo's HTML endpoint (no API key required) for
+ * "<name> <city> email contato", pull the top result URLs, then let the
+ * caller scrape each page for e-mails. Ignores social/aggregator homepages
+ * that never expose contact info in HTML.
+ */
+async function webSearchUrls(query: string, limit = 5): Promise<string[]> {
+  const url = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
+  const html = await fetchText(url, 10000);
+  if (!html) return [];
+  const out: string[] = [];
+  for (const m of html.matchAll(/<a[^>]+class="result__a"[^>]+href="([^"]+)"/gi)) {
+    let href = m[1];
+    // DDG wraps outbound links in a redirect; unwrap `uddg` param.
+    try {
+      const parsed = new URL(href, "https://duckduckgo.com");
+      const uddg = parsed.searchParams.get("uddg");
+      if (uddg) href = decodeURIComponent(uddg);
+    } catch { continue; }
+    if (!/^https?:\/\//i.test(href)) continue;
+    if (/facebook\.com|instagram\.com|twitter\.com|x\.com|linkedin\.com\/company|youtube\.com/i.test(href)) continue;
+    if (!out.includes(href)) out.push(href);
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+
 export const findBusinessEmails = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((raw: unknown) => Input.parse(raw))
   .handler(async ({ data }) => {
-    const base = data.website.replace(/\/$/, "");
-    const urls: string[] = [];
-    for (const p of CONTACT_PATHS) {
-      const u = sameOriginUrl(base + "/", p.replace(/^\//, ""));
-      if (u && !urls.includes(u)) urls.push(u);
-    }
-
     const found = new Set<string>();
-    // Probe pages in parallel, cap at 6.
-    const results = await Promise.all(urls.slice(0, 6).map((u) => fetchText(u)));
-    for (const html of results) {
-      for (const e of extractEmails(html)) found.add(e);
-      if (found.size >= 8) break;
+    let source: "website" | "web-search" = "website";
+
+    // 1. If we have a website, try it first (homepage + common contact pages).
+    if (data.website) {
+      const base = data.website.replace(/\/$/, "");
+      const urls: string[] = [];
+      for (const p of CONTACT_PATHS) {
+        const u = sameOriginUrl(base + "/", p.replace(/^\//, ""));
+        if (u && !urls.includes(u)) urls.push(u);
+      }
+      const results = await Promise.all(urls.slice(0, 6).map((u) => fetchText(u)));
+      for (const html of results) {
+        for (const e of extractEmails(html)) found.add(e);
+        if (found.size >= 8) break;
+      }
+      if (found.size === 0 && results[0]) {
+        const hrefs = Array.from(results[0].matchAll(/href=["']([^"']+)["']/gi))
+          .map((m) => sameOriginUrl(base + "/", m[1]))
+          .filter((u): u is string => !!u && /contact|contato|contacto|about|sobre/i.test(u))
+          .slice(0, 3);
+        const more = await Promise.all(hrefs.map((u) => fetchText(u)));
+        for (const html of more) for (const e of extractEmails(html)) found.add(e);
+      }
     }
 
-    // Also scan homepage HTML for links to /contact and follow one extra hop
-    // if we still haven't found anything.
-    if (found.size === 0 && results[0]) {
-      const hrefs = Array.from(results[0].matchAll(/href=["']([^"']+)["']/gi))
-        .map((m) => sameOriginUrl(base + "/", m[1]))
-        .filter((u): u is string => !!u && /contact|contato|contacto|about|sobre/i.test(u))
-        .slice(0, 3);
-      const more = await Promise.all(hrefs.map((u) => fetchText(u)));
-      for (const html of more) for (const e of extractEmails(html)) found.add(e);
+    // 2. Fallback (or additional coverage): web search by business name.
+    //    Used when there is no website OR the website yielded nothing.
+    if (found.size === 0 && data.name) {
+      source = "web-search";
+      const parts = [data.name, data.city, data.country].filter(Boolean).join(" ");
+      const query = `${parts} email contato`;
+      const hits = await webSearchUrls(query, 5);
+      const pages = await Promise.all(hits.map((u) => fetchText(u, 6000)));
+      for (const html of pages) {
+        for (const e of extractEmails(html)) found.add(e);
+        if (found.size >= 5) break;
+      }
     }
 
     const emails = Array.from(found).slice(0, 5);
@@ -120,5 +165,5 @@ export const findBusinessEmails = createServerFn({ method: "POST" })
       }
     }
 
-    return { emails };
+    return { emails, source };
   });
