@@ -108,6 +108,17 @@ export function BusinessModal({ business, onClose }: Props) {
     return () => clearInterval(id);
   }, [business]);
 
+  // Auto-run the e-mail lookup on modal open whenever we've never searched
+  // for this business before (cached value is null). The handler persists
+  // an empty array on "nothing found", so we won't loop searching.
+  useEffect(() => {
+    if (!business) return;
+    if (findingEmails) return;
+    if (emails !== null) return; // already have result (found or empty)
+    void handleFindEmails();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [business?.id, emails]);
+
   useEffect(() => {
     const cached = business ? readAICache()[business.id] : undefined;
     setPitches(cached?.pitches ?? null);
