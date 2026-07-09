@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { calcOpportunityScore, type Business } from "./mock-businesses";
-import { placesTextSearch, toBusiness, getCachedPlaces, setCachedPlaces } from "./prospector-core";
+import { placesTextSearch, toBusiness, getCachedPlaces, setCachedPlaces, gatewayHeaders } from "./prospector-core";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -87,6 +87,87 @@ const SearchInput = z.object({
   city: z.string().optional().default(""),
   niche: z.string().min(1),
 });
+
+/**
+ * Refresh a place's hours/utcOffset from Google Places details.
+ * Handles legacy company rows whose cache was populated before periods
+ * were added to the field mask. Updates DB and returns fresh data.
+ */
+export const refreshPlaceHours = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ placeId: z.string().min(1) }).parse(d))
+  .handler(async ({ data }): Promise<{
+    hoursPeriods: Business["hoursPeriods"];
+    utcOffsetMinutes: number | null;
+    openNow: boolean | null;
+    hours: string;
+    error?: string;
+  }> => {
+    try {
+      const mask = [
+        "regularOpeningHours",
+        "regularOpeningHours.periods",
+        "utcOffsetMinutes",
+      ].join(",");
+      const res = await fetch(
+        `https://connector-gateway.lovable.dev/google_maps/places/v1/places/${encodeURIComponent(data.placeId)}`,
+        { headers: gatewayHeaders({ "X-Goog-FieldMask": mask }) },
+      );
+      if (!res.ok) {
+        const body = await res.text();
+        console.error("[refreshPlaceHours] places error", res.status, body);
+        return { hoursPeriods: null, utcOffsetMinutes: null, openNow: null, hours: "", error: `Places ${res.status}` };
+      }
+      const p = await res.json() as {
+        regularOpeningHours?: {
+          openNow?: boolean;
+          weekdayDescriptions?: string[];
+          periods?: { open?: { day?: number; hour?: number; minute?: number }; close?: { day?: number; hour?: number; minute?: number } }[];
+        };
+        utcOffsetMinutes?: number;
+      };
+      const hoursPeriods = (p.regularOpeningHours?.periods ?? [])
+        .map((pd) => {
+          const o = pd.open;
+          if (!o || typeof o.day !== "number") return null;
+          const open = { day: o.day, hour: o.hour ?? 0, minute: o.minute ?? 0 };
+          const c = pd.close;
+          const close = c && typeof c.day === "number"
+            ? { day: c.day, hour: c.hour ?? 0, minute: c.minute ?? 0 }
+            : null;
+          return { open, close };
+        })
+        .filter((x): x is NonNullable<typeof x> => x !== null);
+      const utcOffsetMinutes = typeof p.utcOffsetMinutes === "number" ? p.utcOffsetMinutes : null;
+      const openNow = typeof p.regularOpeningHours?.openNow === "boolean" ? p.regularOpeningHours.openNow : null;
+      const hours = p.regularOpeningHours?.weekdayDescriptions?.[0] ?? "";
+
+      // Persist to companies row (best-effort) so future opens are instant.
+      try {
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        await supabaseAdmin
+          .from("companies")
+          .update({
+            hours: (hoursPeriods.length > 0 ? hoursPeriods : null) as unknown as CompanyInsert["hours"],
+            utc_offset_minutes: utcOffsetMinutes,
+            open_now: openNow,
+            last_updated_at: new Date().toISOString(),
+          })
+          .eq("place_id", data.placeId);
+      } catch (dbErr) {
+        console.error("[refreshPlaceHours] db update failed", dbErr);
+      }
+
+      return {
+        hoursPeriods: hoursPeriods.length > 0 ? hoursPeriods : null,
+        utcOffsetMinutes,
+        openNow,
+        hours,
+      };
+    } catch (err) {
+      console.error("[refreshPlaceHours]", err);
+      return { hoursPeriods: null, utcOffsetMinutes: null, openNow: null, hours: "", error: "Failed to refresh hours." };
+    }
+  });
 
 export const searchBusinesses = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => SearchInput.parse(d))
