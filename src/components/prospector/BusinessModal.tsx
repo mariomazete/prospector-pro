@@ -178,6 +178,29 @@ export function BusinessModal({ business, onClose }: Props) {
 
   const openNowLive = computeOpenNow(business.hoursPeriods ?? null, business.utcOffsetMinutes ?? null, now);
 
+  const handleFindEmails = async () => {
+    if (!business.website) {
+      toast.error("Este lead não tem site cadastrado.");
+      return;
+    }
+    setFindingEmails(true);
+    try {
+      const res = await findBusinessEmails({
+        data: { website: business.website, companyId: companyId ?? undefined },
+      });
+      if (res.emails.length === 0) {
+        toast.info("Nenhum e-mail público encontrado no site.");
+      } else {
+        toast.success(`Encontrado(s) ${res.emails.length} e-mail(s).`);
+      }
+      setEmails(res.emails);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao buscar e-mails.");
+    } finally {
+      setFindingEmails(false);
+    }
+  };
+
   const payload = {
     name: business.name,
     city: business.city,
