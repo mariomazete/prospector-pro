@@ -156,7 +156,9 @@ export const findBusinessEmails = createServerFn({ method: "POST" })
 
     const emails = Array.from(found).slice(0, 5);
 
-    if (data.companyId && emails.length > 0) {
+    // Persist even an empty result so we remember "already searched, none found"
+    // and don't hit the network on every modal open.
+    if (data.companyId) {
       try {
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         await supabaseAdmin.from("companies").update({ emails }).eq("id", data.companyId);
