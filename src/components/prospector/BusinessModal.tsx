@@ -468,19 +468,25 @@ export function BusinessModal({ business, onClose }: Props) {
                 {findingEmails ? (
                   <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Buscando…</>
                 ) : (
-                  <>{emails.length > 0
-                    ? "Buscar novamente"
-                    : business.website ? "Buscar e-mails no site" : "Buscar e-mails na web"}</>
+                  <>{emails && emails.length > 0 ? "Buscar novamente" : "Buscar novamente"}</>
                 )}
               </Button>
             </div>
-            {!business.website && (
-              <p className="mt-2 text-xs text-muted-foreground">
-                Sem site cadastrado — a busca vai vasculhar diretórios e páginas
-                públicas na web (páginas amarelas, listas de empresas, etc.).
+
+            {findingEmails && emails === null && (
+              <p className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Procurando e-mails{business.website ? " no site" : " na web"}…
               </p>
             )}
-            {emails.length > 0 && (
+
+            {!findingEmails && emails !== null && emails.length === 0 && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                ⚠️ Esta empresa não possui e-mail público cadastrado.
+              </p>
+            )}
+
+            {emails && emails.length > 0 && (
               <ul className="mt-3 flex flex-wrap gap-2">
                 {emails.map((e) => (
                   <li key={e} className="flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs">
