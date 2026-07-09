@@ -98,7 +98,8 @@ export function BusinessModal({ business, onClose }: Props) {
   const [now, setNow] = useState(() => Date.now());
   const [analysis, setAnalysis] = useState<DeepAnalysis | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
-  const [emails, setEmails] = useState<string[]>([]);
+  // null = never searched yet, [] = searched but nothing found, [...] = found
+  const [emails, setEmails] = useState<string[] | null>(null);
   const [findingEmails, setFindingEmails] = useState(false);
 
   useEffect(() => {
@@ -119,7 +120,7 @@ export function BusinessModal({ business, onClose }: Props) {
     setTagsInput("");
     setFollowup("");
     setEvents([]);
-    setEmails(business?.emails ?? []);
+    setEmails(business?.emails ?? null);
     if (business && user) {
       (async () => {
         try {
@@ -131,7 +132,8 @@ export function BusinessModal({ business, onClose }: Props) {
           if (!c) return;
           setCompanyId(c.id);
           applyState(c.user_state ?? null);
-          if (c.emails && c.emails.length > 0) setEmails(c.emails);
+          // Adopt whatever cache says — including [] which means "already searched, none found".
+          if (c.emails !== null && c.emails !== undefined) setEmails(c.emails);
           const persistedAi = companyAiFromRow(c);
           if (persistedAi.pitches) {
             setPitches(persistedAi.pitches);
