@@ -15,7 +15,7 @@ import {
 import type { Business, HoursPeriod } from "@/lib/mock-businesses";
 import { calcOpportunityScore } from "@/lib/mock-businesses";
 import { OpportunityBadge } from "./OpportunityBadge";
-import { generatePitch, analyzeBusiness, ensureCompany, type DeepAnalysis, type PitchSet } from "@/lib/prospector.functions";
+import { generatePitch, analyzeBusiness, ensureCompany, refreshPlaceHours, type DeepAnalysis, type PitchSet } from "@/lib/prospector.functions";
 import { findBusinessEmails } from "@/lib/find-emails.functions";
 import {
   addToPipeline, findCompanyByPlaceId, toggleFavorite,
@@ -101,12 +101,41 @@ export function BusinessModal({ business, onClose }: Props) {
   // null = never searched yet, [] = searched but nothing found, [...] = found
   const [emails, setEmails] = useState<string[] | null>(null);
   const [findingEmails, setFindingEmails] = useState(false);
+  // Fresh hours pulled on-demand when the business record is missing periods
+  // (legacy rows scanned before the field-mask included periods).
+  const [hoursHydrated, setHoursHydrated] = useState<{
+    hoursPeriods: HoursPeriod[] | null;
+    utcOffsetMinutes: number | null;
+  } | null>(null);
 
   useEffect(() => {
     if (!business) return;
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, [business]);
+
+  // Refresh hours from Google Places when the stored record has no periods.
+  useEffect(() => {
+    if (!business) return;
+    setHoursHydrated(null);
+    if (business.hoursPeriods && business.hoursPeriods.length > 0) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await refreshPlaceHours({ data: { placeId: business.id } });
+        if (cancelled) return;
+        if (res.hoursPeriods || typeof res.utcOffsetMinutes === "number") {
+          setHoursHydrated({
+            hoursPeriods: res.hoursPeriods ?? null,
+            utcOffsetMinutes: res.utcOffsetMinutes,
+          });
+        }
+      } catch (err) {
+        console.error("[modal] refreshPlaceHours failed", err);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [business?.id]);
 
   // Auto-run the e-mail lookup on modal open whenever we've never searched
   // for this business before (cached value is null). The handler persists
@@ -184,12 +213,14 @@ export function BusinessModal({ business, onClose }: Props) {
 
   if (!business) return null;
   const score = calcOpportunityScore(business);
+  const effUtcOffset = hoursHydrated?.utcOffsetMinutes ?? business.utcOffsetMinutes ?? null;
+  const effPeriods = hoursHydrated?.hoursPeriods ?? business.hoursPeriods ?? null;
   const localTime =
-    typeof business.utcOffsetMinutes === "number"
-      ? new Date(now + business.utcOffsetMinutes * 60_000).toISOString().slice(11, 16)
+    typeof effUtcOffset === "number"
+      ? new Date(now + effUtcOffset * 60_000).toISOString().slice(11, 16)
       : null;
 
-  const openNowLive = computeOpenNow(business.hoursPeriods ?? null, business.utcOffsetMinutes ?? null, now);
+  const openNowLive = computeOpenNow(effPeriods, effUtcOffset, now);
 
   const handleFindEmails = async () => {
     setFindingEmails(true);
