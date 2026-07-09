@@ -16,6 +16,7 @@ import type { Business, HoursPeriod } from "@/lib/mock-businesses";
 import { calcOpportunityScore } from "@/lib/mock-businesses";
 import { OpportunityBadge } from "./OpportunityBadge";
 import { generatePitch, analyzeBusiness, ensureCompany, type DeepAnalysis, type PitchSet } from "@/lib/prospector.functions";
+import { findBusinessEmails } from "@/lib/find-emails.functions";
 import {
   addToPipeline, findCompanyByPlaceId, toggleFavorite,
   changeStatus, updateStateMeta, listEvents, addEvent,
@@ -97,6 +98,8 @@ export function BusinessModal({ business, onClose }: Props) {
   const [now, setNow] = useState(() => Date.now());
   const [analysis, setAnalysis] = useState<DeepAnalysis | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
+  const [emails, setEmails] = useState<string[]>([]);
+  const [findingEmails, setFindingEmails] = useState(false);
 
   useEffect(() => {
     if (!business) return;
@@ -116,6 +119,7 @@ export function BusinessModal({ business, onClose }: Props) {
     setTagsInput("");
     setFollowup("");
     setEvents([]);
+    setEmails(business?.emails ?? []);
     if (business && user) {
       (async () => {
         try {
@@ -127,6 +131,7 @@ export function BusinessModal({ business, onClose }: Props) {
           if (!c) return;
           setCompanyId(c.id);
           applyState(c.user_state ?? null);
+          if (c.emails && c.emails.length > 0) setEmails(c.emails);
           const persistedAi = companyAiFromRow(c);
           if (persistedAi.pitches) {
             setPitches(persistedAi.pitches);
@@ -172,6 +177,29 @@ export function BusinessModal({ business, onClose }: Props) {
       : null;
 
   const openNowLive = computeOpenNow(business.hoursPeriods ?? null, business.utcOffsetMinutes ?? null, now);
+
+  const handleFindEmails = async () => {
+    if (!business.website) {
+      toast.error("Este lead não tem site cadastrado.");
+      return;
+    }
+    setFindingEmails(true);
+    try {
+      const res = await findBusinessEmails({
+        data: { website: business.website, companyId: companyId ?? undefined },
+      });
+      if (res.emails.length === 0) {
+        toast.info("Nenhum e-mail público encontrado no site.");
+      } else {
+        toast.success(`Encontrado(s) ${res.emails.length} e-mail(s).`);
+      }
+      setEmails(res.emails);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao buscar e-mails.");
+    } finally {
+      setFindingEmails(false);
+    }
+  };
 
   const payload = {
     name: business.name,
@@ -422,6 +450,52 @@ export function BusinessModal({ business, onClose }: Props) {
             <InfoRow icon={<Clock className="h-3.5 w-3.5" />} label="Hours" value={business.hours} />
             <InfoRow icon={<ExternalLink className="h-3.5 w-3.5" />} label="Google Maps" value="Open in Maps" href={business.mapsUrl} />
             <InfoRow icon={<Star className="h-3.5 w-3.5" />} label="Rating" value={`${business.rating.toFixed(1)} (${business.reviewsCount} reviews)`} />
+          </div>
+
+          <div className="rounded-xl border border-border bg-background/40 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                <Mail className="h-3.5 w-3.5 text-primary" /> Contact e-mails
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleFindEmails}
+                disabled={findingEmails || !business.website}
+                className="h-8"
+              >
+                {findingEmails ? (
+                  <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Buscando…</>
+                ) : (
+                  <>{emails.length > 0 ? "Buscar novamente" : "Buscar e-mails no site"}</>
+                )}
+              </Button>
+            </div>
+            {!business.website && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                Sem site cadastrado — não há como localizar e-mails automaticamente.
+              </p>
+            )}
+            {emails.length > 0 && (
+              <ul className="mt-3 flex flex-wrap gap-2">
+                {emails.map((e) => (
+                  <li key={e} className="flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs">
+                    <a href={`mailto:${e}`} className="font-medium hover:text-primary">{e}</a>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(e);
+                        toast.success("E-mail copiado");
+                      }}
+                      className="text-muted-foreground hover:text-primary"
+                      aria-label={`Copiar ${e}`}
+                    >
+                      <Copy className="h-3 w-3" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           {user && companyId && (
