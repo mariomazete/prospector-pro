@@ -211,6 +211,17 @@ const PitchInput = z.object({
   hasWebsite: z.boolean(),
   website: z.string().nullable(),
   utcOffsetMinutes: z.number().nullable().optional(),
+  analysis: z
+    .object({
+      bestApproach: z.string().optional(),
+      bestServices: z.array(z.string()).optional(),
+      businessInsights: z.array(z.string()).optional(),
+      praised: z.array(z.string()).optional(),
+      complained: z.array(z.string()).optional(),
+      recommendedServices: z.array(z.string()).optional(),
+      summary: z.string().optional(),
+    })
+    .optional(),
 });
 
 async function callAI(system: string, user: string, expectJson: boolean): Promise<{ text: string; error?: string }> {
