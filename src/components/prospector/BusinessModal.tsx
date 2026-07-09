@@ -192,20 +192,11 @@ export function BusinessModal({ business, onClose }: Props) {
           companyId: companyId ?? undefined,
         },
       });
-      if (res.emails.length === 0) {
-        toast.info(
-          business.website
-            ? "Nenhum e-mail público encontrado no site nem em buscas."
-            : "Nenhum e-mail público encontrado em buscas web.",
-        );
-      } else {
-        toast.success(
-          `Encontrado(s) ${res.emails.length} e-mail(s)${res.source === "web-search" ? " via busca web" : ""}.`,
-        );
-      }
       setEmails(res.emails);
+      return res;
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Falha ao buscar e-mails.");
+      return null;
     } finally {
       setFindingEmails(false);
     }
