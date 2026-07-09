@@ -377,7 +377,27 @@ ${(() => {
     : h >= 12 && h < 18 ? "afternoon (Boa tarde / Good afternoon / Buenas tardes / Bon après-midi / Guten Tag)"
     : "evening/night (Boa noite / Good evening / Buenas noches / Bonsoir / Guten Abend)";
   return `Local time at prospect: ${String(h).padStart(2, "0")}:00 — greeting MUST match this ${period}. Do not use a greeting from a different period.`;
-})()}`;
+})()}
+${data.analysis ? `
+========================================================
+ANÁLISE ESTRATÉGICA PRÉVIA (fonte de verdade — usar como base do pitch)
+========================================================
+Esta análise foi feita por outra IA sobre ESTA empresa específica. O pitch DEVE partir desta análise — usar o "melhor ângulo" e as dores/oportunidades reais detectadas, sem inventar dados novos e sem repetir literalmente as frases da análise.
+
+- Melhor ângulo comercial: ${data.analysis.bestApproach ?? "(n/a)"}
+- Serviços mais adequados: ${(data.analysis.bestServices ?? []).join(" | ") || "(n/a)"}
+- Serviços recomendados (upsell): ${(data.analysis.recommendedServices ?? []).join(" | ") || "(n/a)"}
+- Insights do negócio: ${(data.analysis.businessInsights ?? []).join(" | ") || "(n/a)"}
+- Clientes elogiam: ${(data.analysis.praised ?? []).join(" | ") || "(n/a)"}
+- Clientes queixam-se de: ${(data.analysis.complained ?? []).join(" | ") || "(n/a)"}
+- Resumo estratégico: ${data.analysis.summary ?? "(n/a)"}
+
+INSTRUÇÕES:
+1) Escolha 1 (UM) insight/oportunidade da análise para ancorar o elogio verdadeiro.
+2) Escolha 1 (UM) ângulo diferente da análise para justificar por que preparou a demonstração — nunca repetir o mesmo entre as três variantes (formal/consultive/whatsapp).
+3) Nunca liste serviços. Nunca copie frases da análise. Traduza a estratégia em conversa humana e curta.
+4) Não mencione que existe uma "análise" nem faça referência a IA/estudo. Fale como quem simplesmente reparou nas coisas.
+` : ""}`;
     const { text, error } = await callAI(system, user, true);
     if (error) return { error };
     try {
