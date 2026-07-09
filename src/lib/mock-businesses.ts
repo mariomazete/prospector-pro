@@ -26,6 +26,8 @@ export interface Business {
   openNow?: boolean | null;
   /** Structured weekly opening periods from Google Places (day 0 = Sunday). */
   hoursPeriods?: HoursPeriod[] | null;
+  /** Contact e-mails discovered on the business website (cached). */
+  emails?: string[] | null;
 }
 
 export interface HoursPoint { day: number; hour: number; minute: number }
