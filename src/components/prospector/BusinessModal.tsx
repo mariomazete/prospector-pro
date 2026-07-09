@@ -469,19 +469,22 @@ export function BusinessModal({ business, onClose }: Props) {
                 size="sm"
                 variant="outline"
                 onClick={handleFindEmails}
-                disabled={findingEmails || !business.website}
+                disabled={findingEmails}
                 className="h-8"
               >
                 {findingEmails ? (
                   <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Buscando…</>
                 ) : (
-                  <>{emails.length > 0 ? "Buscar novamente" : "Buscar e-mails no site"}</>
+                  <>{emails.length > 0
+                    ? "Buscar novamente"
+                    : business.website ? "Buscar e-mails no site" : "Buscar e-mails na web"}</>
                 )}
               </Button>
             </div>
             {!business.website && (
               <p className="mt-2 text-xs text-muted-foreground">
-                Sem site cadastrado — não há como localizar e-mails automaticamente.
+                Sem site cadastrado — a busca vai vasculhar diretórios e páginas
+                públicas na web (páginas amarelas, listas de empresas, etc.).
               </p>
             )}
             {emails.length > 0 && (
