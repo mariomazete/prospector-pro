@@ -452,6 +452,52 @@ export function BusinessModal({ business, onClose }: Props) {
             <InfoRow icon={<Star className="h-3.5 w-3.5" />} label="Rating" value={`${business.rating.toFixed(1)} (${business.reviewsCount} reviews)`} />
           </div>
 
+          <div className="rounded-xl border border-border bg-background/40 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                <Mail className="h-3.5 w-3.5 text-primary" /> Contact e-mails
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleFindEmails}
+                disabled={findingEmails || !business.website}
+                className="h-8"
+              >
+                {findingEmails ? (
+                  <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Buscando…</>
+                ) : (
+                  <>{emails.length > 0 ? "Buscar novamente" : "Buscar e-mails no site"}</>
+                )}
+              </Button>
+            </div>
+            {!business.website && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                Sem site cadastrado — não há como localizar e-mails automaticamente.
+              </p>
+            )}
+            {emails.length > 0 && (
+              <ul className="mt-3 flex flex-wrap gap-2">
+                {emails.map((e) => (
+                  <li key={e} className="flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs">
+                    <a href={`mailto:${e}`} className="font-medium hover:text-primary">{e}</a>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(e);
+                        toast.success("E-mail copiado");
+                      }}
+                      className="text-muted-foreground hover:text-primary"
+                      aria-label={`Copiar ${e}`}
+                    >
+                      <Copy className="h-3 w-3" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
           {user && companyId && (
             <section className="rounded-xl border border-border bg-background/40 p-4">
               <div className="mb-3 flex items-center justify-between">
