@@ -126,7 +126,7 @@ export function BusinessModal({ business, onClose }: Props) {
         if (cancelled) return;
         if (res.hoursPeriods || typeof res.utcOffsetMinutes === "number") {
           setHoursHydrated({
-            hoursPeriods: res.hoursPeriods,
+            hoursPeriods: res.hoursPeriods ?? null,
             utcOffsetMinutes: res.utcOffsetMinutes,
           });
         }
