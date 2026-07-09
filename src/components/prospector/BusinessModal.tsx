@@ -213,12 +213,14 @@ export function BusinessModal({ business, onClose }: Props) {
 
   if (!business) return null;
   const score = calcOpportunityScore(business);
+  const effUtcOffset = hoursHydrated?.utcOffsetMinutes ?? business.utcOffsetMinutes ?? null;
+  const effPeriods = hoursHydrated?.hoursPeriods ?? business.hoursPeriods ?? null;
   const localTime =
-    typeof business.utcOffsetMinutes === "number"
-      ? new Date(now + business.utcOffsetMinutes * 60_000).toISOString().slice(11, 16)
+    typeof effUtcOffset === "number"
+      ? new Date(now + effUtcOffset * 60_000).toISOString().slice(11, 16)
       : null;
 
-  const openNowLive = computeOpenNow(business.hoursPeriods ?? null, business.utcOffsetMinutes ?? null, now);
+  const openNowLive = computeOpenNow(effPeriods, effUtcOffset, now);
 
   const handleFindEmails = async () => {
     setFindingEmails(true);
