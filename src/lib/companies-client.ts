@@ -362,9 +362,7 @@ export function companyToBusiness(c: CompanyRow): Business {
     utcOffsetMinutes: c.utc_offset_minutes ?? null,
     openNow: c.open_now ?? null,
     hoursPeriods,
-    emails: Array.isArray((c as { emails?: unknown }).emails)
-      ? ((c as { emails: string[] }).emails)
-      : null,
+    emails: c.emails ?? null,
   };
 }
 
