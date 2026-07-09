@@ -259,7 +259,46 @@ export function BusinessModal({ business, onClose }: Props) {
   const handleGenerate = async () => {
     setGenerating(true);
     try {
-      const res = await generatePitch({ data: payload });
+      // First ensure we have the strategic analysis — the pitch is built on top of it.
+      let currentAnalysis = analysis;
+      if (!currentAnalysis) {
+        setAnalyzing(true);
+        try {
+          const aRes = await analyzeBusiness({
+            data: { ...payload, reviews: business.reviews.map((r) => r.text) },
+          });
+          if (aRes.analysis) {
+            currentAnalysis = aRes.analysis;
+            setAnalysis(aRes.analysis);
+            writeAICache(business.id, { analysis: aRes.analysis });
+            const pid = await ensurePersistedCompanyId();
+            if (pid) {
+              await updateCompanyAi(pid, { analysis: aRes.analysis });
+              await addEvent(pid, "discovery", "AI sales strategy generated").catch(() => {});
+              refreshEvents(pid);
+            }
+          }
+        } catch (err) {
+          console.error("[modal] pre-pitch analysis failed", err);
+        } finally {
+          setAnalyzing(false);
+        }
+      }
+      const pitchPayload = currentAnalysis
+        ? {
+            ...payload,
+            analysis: {
+              bestApproach: currentAnalysis.attackPlan?.bestApproach,
+              bestServices: currentAnalysis.attackPlan?.bestServices,
+              businessInsights: currentAnalysis.businessInsights,
+              praised: currentAnalysis.reviewIntel?.praised,
+              complained: currentAnalysis.reviewIntel?.complained,
+              recommendedServices: currentAnalysis.recommendedServices,
+              summary: currentAnalysis.summary,
+            },
+          }
+        : payload;
+      const res = await generatePitch({ data: pitchPayload });
       if (res.error || !res.pitches) toast.error(res.error ?? "No pitch");
       else {
         setPitches(res.pitches);
