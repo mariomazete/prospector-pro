@@ -2,9 +2,11 @@
 
 **Find local businesses that need a website, understand them, and reach out — in one tool.**
 
-Prospector Pro is a lead-generation app I built to power cold outreach for my web agency. You pick a country, a city and a niche (dentists, law firms, pet shops…), and it pulls real businesses from Google Places, scores how likely each one is to buy a website, writes a tailored pitch with AI, and lets you send it on WhatsApp and track the deal in a built-in CRM.
+I run a small web agency. To find clients, I was manually searching Google Maps for local businesses without a website so I could offer to build one. It was slow and hard to track, so I built Prospector Pro to automate the whole process.
 
-It was used in production for my agency's WhatsApp outreach.
+You pick a country, a city and a niche (dentists, law firms, pet shops…), and it pulls real businesses from Google Places, scores how likely each one is to buy a website, writes a tailored pitch with AI, and lets you send it on WhatsApp and track the deal in a built-in CRM.
+
+I used it in production for my agency's WhatsApp outreach.
 
 ---
 
